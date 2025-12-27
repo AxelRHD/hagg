@@ -1,12 +1,12 @@
 # Architecture
 
-This document describes the **concrete architecture** of the `hacc` project.
+This document describes the **concrete architecture** of the `hagg` project.
 It explains not only *how* the code is structured, but more importantly *why*.
 
 Throughout this document, **we** refers to the authors and maintainers of this project —
 this is our shared baseline.
 
-> **Project status:** `hacc` is still early **WIP (work in progress)**.
+> **Project status:** `hagg` is still early **WIP (work in progress)**.
 > The structure is intentionally simple, and we expect it to evolve as we learn.
 
 ---
@@ -70,7 +70,7 @@ sequenceDiagram
 
 ## Event Bus (Header-based)
 
-In addition to the classic request/response flow, HACC uses a **lightweight, server-driven event bus** implemented via HTTP response headers.
+In addition to the classic request/response flow, hagg uses a **lightweight, server-driven event bus** implemented via HTTP response headers.
 
 Instead of a client-side global event system or state store, the backend emits **semantic events** that the frontend reacts to declaratively. The primary mechanism is `HX-Trigger` (optionally combined with small custom headers).
 

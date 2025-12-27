@@ -1,6 +1,6 @@
-# hacc
+# hagg
 
-`hacc` is a deliberately minimal baseline for **server-side rendered Go web applications**.
+`hagg` is a deliberately minimal baseline for **server-side rendered Go web applications**.
 It is designed for developers who want to build long-lived, maintainable tools — without SPA overhead,
 without build pipelines, and without hidden magic.
 
@@ -8,7 +8,7 @@ This project is **not a framework**.
 It is a **stable baseline** meant to be copied, adapted, and used for years.
 
 Following the tradition of established stack acronyms such as JAMstack, MERN, or LAMP,
-we refer to the stack used by `hacc` as the **HAGG Stack**
+we refer to the stack used by `hagg` as the **HAGG Stack**
 (**H**TMX · **A**lpine.js · **G**omponents · **G**in/Go).
 
 > **Project status:** This repository is still early **WIP (work in progress)**.
@@ -91,7 +91,7 @@ See:
 
 ## Authorization (Permission Layer)
 
-`hacc` includes a permission layer built on **Casbin**.
+`hagg` includes a permission layer built on **Casbin**.
 
 ### Why Casbin?
 
@@ -186,7 +186,7 @@ For deeper reasoning and request flow, see **[ARCHITECTURE.md](ARCHITECTURE.md)*
 ## Forking & Contributions
 
 You are very welcome to **fork this project** and adapt it to your own needs.
-`hacc` is intentionally designed as a baseline that can be copied, reshaped,
+`hagg` is intentionally designed as a baseline that can be copied, reshaped,
 and evolved independently.
 
 Please note that this is a **hobby and learning project**.
