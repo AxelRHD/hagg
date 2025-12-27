@@ -1,0 +1,24 @@
+# ------------------------------------------------------------
+# Rollen → Actions
+# ------------------------------------------------------------
+
+# Superuser: darf alles
+p, superuser, *
+
+# Admin-Rolle
+p, admin, user:create
+p, admin, user:list
+p, admin, user:delete
+p, admin, selfdestroy
+
+# Viewer-Rolle
+p, viewer, user:list
+
+
+# ------------------------------------------------------------
+# User → Rollen
+# ------------------------------------------------------------
+
+g, arudolf, superuser
+g, alice, admin
+g, worker, viewer

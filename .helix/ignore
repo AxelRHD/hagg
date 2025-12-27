@@ -1,0 +1,6 @@
+tmp/
+assets/
+ent/*
+!ent/schema
+
+*.sqlite
