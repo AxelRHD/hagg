@@ -16,6 +16,8 @@ func Skeleton(ctx *gin.Context, content ...g.Node) g.Node {
 			Data("theme", "dark"),
 
 			Head(
+				TitleEl(g.Text("HAGG Stack")),
+
 				Charset("utf-8"),
 				Meta(
 					Name("viewport"),
@@ -26,8 +28,6 @@ func Skeleton(ctx *gin.Context, content ...g.Node) g.Node {
 					Name("color-scheme"),
 					Content("light dark"),
 				),
-
-				TitleEl(g.Text("HAGG Stack")),
 
 				// --- ALPINE JS ---
 				view.Script(ctx, "/static/js/alpine_persist.min.js",

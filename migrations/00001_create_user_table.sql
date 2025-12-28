@@ -2,7 +2,7 @@
 -- +goose StatementBegin
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY,
-uid TEXT UNIQUE NOT NULL, -- random secret, handed to user
+    uid TEXT UNIQUE NOT NULL, -- random secret, handed to user
     display_name TEXT UNIQUE NOT NULL,
     last_name TEXT NOT NULL DEFAULT '',
     first_name TEXT NOT NULL DEFAULT '',
