@@ -3,11 +3,11 @@ package middleware
 import (
 	"net/http"
 
-	"github.com/gin-gonic/gin"
+	"github.com/axelrhd/hagg-lib/flash"
+	"github.com/axelrhd/hagg-lib/notie"
+	"github.com/axelrhd/hagg-lib/view"
 	"github.com/axelrhd/hagg/internal/app"
-	"github.com/axelrhd/hagg/internal/flash"
-	"github.com/axelrhd/hagg/internal/frontend/shared"
-	"github.com/axelrhd/hagg/internal/notie"
+	"github.com/gin-gonic/gin"
 )
 
 func RequirePermission(deps app.Deps, action string) gin.HandlerFunc {
@@ -20,7 +20,7 @@ func RequirePermission(deps app.Deps, action string) gin.HandlerFunc {
 		if !ok {
 			flash.Set(ctx, flash.Unauthorized)
 
-			ctx.Redirect(http.StatusFound, shared.Lnk(ctx, "/"))
+			ctx.Redirect(http.StatusFound, view.URLString(ctx, "/"))
 			ctx.Abort()
 			return
 		}

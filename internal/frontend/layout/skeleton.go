@@ -1,7 +1,7 @@
 package layout
 
 import (
-	"github.com/axelrhd/hagg/internal/frontend/shared"
+	"github.com/axelrhd/hagg-lib/view"
 	"github.com/gin-gonic/gin"
 	g "maragu.dev/gomponents"
 	. "maragu.dev/gomponents/html"
@@ -30,64 +30,38 @@ func Skeleton(ctx *gin.Context, content ...g.Node) g.Node {
 				TitleEl(g.Text("HAGG Stack")),
 
 				// --- ALPINE JS ---
-				Script(
+				view.Script(ctx, "/static/js/alpine_persist.min.js",
 					Defer(),
-					Src(shared.Lnk(ctx, "/static/js/alpine_persist.min.js")),
 				),
-				Script(
+				view.Script(ctx, "/static/js/alpine.min.js",
 					Defer(),
-					Src(shared.Lnk(ctx, "/static/js/alpine.min.js")),
 				),
 
 				// --- HTMX ---
-				Script(
-					Src(shared.Lnk(ctx, "/static/js/htmx.min.js")),
-				),
+				view.Script(ctx, "/static/js/htmx.min.js"),
 
 				// --- SURREAL JS ---
-				Script(
-					Src(shared.Lnk(ctx, "/static/js/surreal_v1.3.4.js")),
-				),
+				view.Script(ctx, "/static/js/surreal_v1.3.4.js"),
 
 				// --- NOTIE ---
-				Link(
-					Rel("stylesheet"),
-					Href(shared.Lnk(ctx, "/static/css/notie.min.css")),
-				),
-				Script(
-					Src(shared.Lnk(ctx, "/static/js/notie.min.js")),
-				),
+				view.Stylesheet(ctx, "/static/css/notie.min.css"),
+				view.Script(ctx, "/static/js/notie.min.js"),
 				Script(
 					g.Raw("notie.setOptions({ positions: { alert: 'bottom', force: 'bottom', confirm: 'bottom', input: 'bottom' } })"),
 				),
 
 				// --- FLEXBOXGRID CSS ---
-				Link(
-					Rel("stylesheet"),
-					Href(shared.Lnk(ctx, "/static/css/flexboxgrid.min.css")),
-				),
+				view.Stylesheet(ctx, "/static/css/flexboxgrid.min.css"),
 
 				// --- TACHYONS CSS ---
-				Link(
-					Rel("stylesheet"),
-					Href(shared.Lnk(ctx, "/static/css/tachyons.min.css")),
-				),
+				view.Stylesheet(ctx, "/static/css/tachyons.min.css"),
 
 				// --- PICO CSS ---
-				Link(
-					Rel("stylesheet"),
-					Href(shared.Lnk(ctx, "/static/css/pico.min.css")),
-				),
-				Link(
-					Rel("stylesheet"),
-					Href(shared.Lnk(ctx, "/static/css/pico.colors.min.css")),
-				),
+				view.Stylesheet(ctx, "/static/css/pico.min.css"),
+				view.Stylesheet(ctx, "/static/css/pico.colors.min.css"),
 
 				// --- APP CSS ---
-				Link(
-					Rel("stylesheet"),
-					Href(shared.Lnk(ctx, "/static/css/app.css")),
-				),
+				view.Stylesheet(ctx, "/static/css/app.css"),
 			),
 			Body(
 				grp,

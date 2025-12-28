@@ -1,8 +1,8 @@
 package shared
 
 import (
-	"github.com/axelrhd/hagg/internal/flash"
-	"github.com/axelrhd/hagg/internal/notie"
+	"github.com/axelrhd/hagg-lib/flash"
+	"github.com/axelrhd/hagg-lib/notie"
 	"github.com/gin-gonic/gin"
 )
 

@@ -14,6 +14,7 @@ type Config struct {
 	Server   ServerConfig
 	Session  SessionConfig
 	Database DatabaseConfig
+	Casbin   CasbinConfig
 }
 
 // ------------------------------------------------------------
@@ -60,6 +61,15 @@ type ExternalDatabasesConfig struct {
 }
 
 // ------------------------------------------------------------
+// Casbin
+// ------------------------------------------------------------
+
+type CasbinConfig struct {
+	ModelPath  string `envconfig:"MODEL"  default:"model.conf"`
+	PolicyPath string `envconfig:"POLICY" default:"policy.csv"`
+}
+
+// ------------------------------------------------------------
 // Load
 // ------------------------------------------------------------
 
@@ -82,10 +92,20 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("load database config: %w", err)
 	}
 
+	// ----------------------------
+	// Casbin
+	// ----------------------------
+
+	var casbinCfg CasbinConfig
+	if err := envconfig.Process("CASBIN", &casbinCfg); err != nil {
+		return nil, fmt.Errorf("load casbin config: %w", err)
+	}
+
 	cfg := &Config{
 		Server:   server,
 		Session:  session,
 		Database: database,
+		Casbin:   casbinCfg,
 	}
 
 	if err := cfg.validate(); err != nil {
@@ -122,6 +142,14 @@ func (c *Config) validate() error {
 		return fmt.Errorf("DB_SQLITE_PATH must not be empty")
 	}
 
+	if c.Casbin.ModelPath == "" {
+		return fmt.Errorf("CASBIN_MODEL must not be empty")
+	}
+
+	if c.Casbin.PolicyPath == "" {
+		return fmt.Errorf("CASBIN_POLICY must not be empty")
+	}
+
 	return nil
 }
 
@@ -151,6 +179,7 @@ func (c Config) Print() {
 	printServer(c.Server)
 	printDatabase(c.Database)
 	printSession(c.Session)
+	printCasbin(c.Casbin)
 }
 
 func printServer(s ServerConfig) {
@@ -180,8 +209,14 @@ func printDatabase(d DatabaseConfig) {
 }
 
 func printSession(s SessionConfig) {
-	fmt.Println("└─ Session")
-	fmt.Printf("   ├─ CookieName : %s\n", s.CookieName)
-	fmt.Printf("   ├─ MaxAge     : %s\n", s.MaxAge)
-	fmt.Printf("   └─ Secret     : %s\n", s.Secret)
+	fmt.Println("├─ Session")
+	fmt.Printf("│  ├─ CookieName : %s\n", s.CookieName)
+	fmt.Printf("│  ├─ MaxAge     : %s\n", s.MaxAge)
+	fmt.Printf("│  └─ Secret     : %s\n", s.Secret)
+}
+
+func printCasbin(c CasbinConfig) {
+	fmt.Println("└─ Casbin")
+	fmt.Printf("   ├─ Model  : %s\n", c.ModelPath)
+	fmt.Printf("   └─ Policy : %s\n", c.PolicyPath)
 }

@@ -9,11 +9,11 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/axelrhd/hagg-lib/casbinx"
+	libmw "github.com/axelrhd/hagg-lib/middleware"
 	"github.com/axelrhd/hagg/internal/app"
 	"github.com/axelrhd/hagg/internal/auth"
-	"github.com/axelrhd/hagg/internal/authz"
 	"github.com/axelrhd/hagg/internal/config"
-	"github.com/axelrhd/hagg/internal/http/middleware"
 	"github.com/axelrhd/hagg/internal/user"
 
 	"github.com/gin-contrib/sessions"
@@ -60,12 +60,28 @@ func buildRouter(cfg *config.Config, usrStore user.Store) *gin.Engine {
 		SameSite: http.SameSiteLaxMode,
 	})
 
+	// casbin plugin
+	enforcer, err := casbinx.NewFileEnforcer(
+		cfg.Casbin.ModelPath,
+		cfg.Casbin.PolicyPath,
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// deps
+	deps := app.Deps{
+		Users:    usrStore,
+		Auth:     auth.New(usrStore),
+		Enforcer: enforcer,
+	}
+
 	// middleware
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
 	r.Use(sessions.Sessions(cfg.Session.CookieName, store))
-	r.Use(middleware.BasePath(cfg.Server.BasePath))
-	r.Use(middleware.HXTriggers())
+	r.Use(libmw.BasePath(cfg.Server.BasePath))
+	r.Use(libmw.HXTriggers())
 
 	// static files
 	staticFs, err := fs.Sub(embeddedFs, "static")
@@ -76,12 +92,6 @@ func buildRouter(cfg *config.Config, usrStore user.Store) *gin.Engine {
 	rg := r.Group(cfg.Server.BasePath)
 	rg.StaticFS("/static", http.FS(staticFs))
 
-	// deps
-	deps := app.Deps{
-		Users:    usrStore,
-		Auth:     auth.New(usrStore),
-		Enforcer: authz.MustNewEnforcer(),
-	}
 	Routing(rg, deps)
 
 	return r

@@ -1,8 +1,9 @@
 module github.com/axelrhd/hagg
 
-go 1.24.5
+go 1.25.5
 
 require (
+	github.com/axelrhd/hagg-lib v0.0.0
 	github.com/axelrhd/litetime v0.1.0
 	github.com/eduardolat/gomponents-lucide v1.4.0
 	github.com/gin-contrib/sessions v1.0.4
@@ -67,3 +68,5 @@ require (
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
 )
+
+replace github.com/axelrhd/hagg-lib => ../hagg-lib

@@ -1,8 +1,8 @@
 package layout
 
 import (
+	"github.com/axelrhd/hagg-lib/view"
 	"github.com/axelrhd/hagg/internal/app"
-	"github.com/axelrhd/hagg/internal/frontend/shared"
 	lucide "github.com/eduardolat/gomponents-lucide"
 	"github.com/gin-gonic/gin"
 	x "github.com/glsubri/gomponents-alpine"
@@ -31,10 +31,7 @@ func Navbar(ctx *gin.Context, deps app.Deps, oob bool) g.Node {
 
 		Ul(
 			Li(
-				A(
-					Href(shared.Lnk(ctx, "/")),
-					g.Text("Home"),
-				),
+				view.A(ctx, "/", g.Text("Home")),
 			),
 			g.If(deps.Auth.IsAuthenticated(ctx),
 				Li(
@@ -51,7 +48,7 @@ func Navbar(ctx *gin.Context, deps app.Deps, oob bool) g.Node {
 						x.Bind("class", "picoTheme === 'dark' ? 'contrast' : 'secondary'"),
 
 						x.On("click.prevent", "console.log('Logout clicked')"),
-						hx.Post(shared.Lnk(ctx, "/htmx/logout")),
+						hx.Post(view.URLString(ctx, "/htmx/logout")),
 
 						g.Text("Logout"),
 					),

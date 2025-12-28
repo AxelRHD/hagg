@@ -1,7 +1,7 @@
 package login
 
 import (
-	"github.com/axelrhd/hagg/internal/frontend/shared"
+	"github.com/axelrhd/hagg-lib/view"
 	"github.com/gin-gonic/gin"
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
@@ -21,7 +21,7 @@ func LoginForm(ctx *gin.Context) g.Node {
 		),
 
 		Form(
-			hx.Post(shared.Lnk(ctx, "/htmx/login")),
+			hx.Post(view.URLString(ctx, "/htmx/login")),
 
 			Input(
 				Type("text"),

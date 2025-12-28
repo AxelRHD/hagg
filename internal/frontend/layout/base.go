@@ -1,9 +1,9 @@
 package layout
 
 import (
+	"github.com/axelrhd/hagg-lib/notie"
 	"github.com/axelrhd/hagg/internal/app"
 	"github.com/axelrhd/hagg/internal/frontend/shared"
-	"github.com/axelrhd/hagg/internal/notie"
 	"github.com/gin-gonic/gin"
 	x "github.com/glsubri/gomponents-alpine"
 	g "maragu.dev/gomponents"

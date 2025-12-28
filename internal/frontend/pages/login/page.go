@@ -1,11 +1,11 @@
 package login
 
 import (
-	"github.com/axelrhd/hagg/internal/app"
-	"github.com/axelrhd/hagg/internal/frontend/layout"
-	"github.com/axelrhd/hagg/internal/frontend/shared"
 	"log"
 
+	"github.com/axelrhd/hagg-lib/view"
+	"github.com/axelrhd/hagg/internal/app"
+	"github.com/axelrhd/hagg/internal/frontend/layout"
 	"github.com/gin-gonic/gin"
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
@@ -29,7 +29,7 @@ func Page(ctx *gin.Context, deps app.Deps) g.Node {
 
 	content := g.Group{
 		Div(
-			hx.Post(shared.Lnk(ctx, "/")),
+			hx.Post(view.URLString(ctx, "/")),
 			hx.Trigger("auth-changed from:body"),
 			hx.Target("#page"),
 			hx.Select("#page"),
@@ -57,7 +57,7 @@ func Page(ctx *gin.Context, deps app.Deps) g.Node {
 					),
 
 					Form(
-						hx.Post(shared.Lnk(ctx, "/htmx/logout")),
+						hx.Post(view.URLString(ctx, "/htmx/logout")),
 						Class("mt3"),
 
 						Button(

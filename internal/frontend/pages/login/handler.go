@@ -4,11 +4,11 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/axelrhd/hagg-lib/flash"
+	"github.com/axelrhd/hagg-lib/hxevents"
+	"github.com/axelrhd/hagg-lib/notie"
+	"github.com/axelrhd/hagg-lib/view"
 	"github.com/axelrhd/hagg/internal/app"
-	"github.com/axelrhd/hagg/internal/flash"
-	"github.com/axelrhd/hagg/internal/frontend/shared"
-	"github.com/axelrhd/hagg/internal/hxevents"
-	"github.com/axelrhd/hagg/internal/notie"
 	"github.com/gin-gonic/gin"
 )
 
@@ -57,7 +57,7 @@ func HxLogout(deps app.Deps) gin.HandlerFunc {
 		flash.Set(ctx, flash.LogoutSuccess)
 
 		// ctx.Redirect(http.StatusFound, shared.Lnk(ctx, "/"))
-		ctx.Header("HX-Redirect", shared.Lnk(ctx, "/"))
+		ctx.Header("HX-Redirect", view.URLString(ctx, "/"))
 		// ctx.Abort()
 	}
 }

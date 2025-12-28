@@ -43,7 +43,7 @@ func main() {
 	}
 
 	// --- Server mode ---
-	hacc.StartServer(cfg, userStore)
+	hagg.StartServer(cfg, userStore)
 }
 
 func handleCreateUser(store user.Store, uid string) {
