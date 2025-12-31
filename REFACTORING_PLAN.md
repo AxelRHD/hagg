@@ -8,6 +8,49 @@
 
 ---
 
+## 🎯 Progress Tracking
+
+**Freeze Point:** `v0.9.0` (12713e0) - Projekt-Stand vor Refactoring
+
+**Aktueller Stand:** 31.12.2024
+
+### ✅ Abgeschlossen
+
+- **Phase 1, Point 3: Tailwind CSS Setup** (47f19f3)
+  - Tailwind v4 standalone binary installiert (~/.local/bin)
+  - Pico-inspiriertes Design System mit warmen Farben
+  - Dark Mode Support (manual toggle + prefers-color-scheme)
+  - Toast-Komponenten mit SVG-Icons
+  - justfile für Build-Automation (css-build, css-watch)
+  - Test-Seite: `/static/test-styles.html`
+  - REFACTORING_PLAN.md aktualisiert (no npm/node)
+
+### 🔄 In Arbeit
+
+- Nichts (Jahreswechsel-Pause)
+
+### 📅 Nächste Schritte
+
+1. **Phase 1, Point 1: Context-Wrapper + hxevents Package**
+   - `hagg-lib/handler/context.go` erstellen (Option C: Fields + minimal helpers)
+   - `hagg-lib/handler/hxevents/` package für Initial-Events erstellen
+   - Tests schreiben
+   - Dokumentation
+
+2. **Phase 1, Point 2: Chi Router Integration**
+   - Gin durch Chi v5 ersetzen
+   - Middleware-Stack anpassen
+   - Routes refactoren
+
+3. **Phase 1, Point 4: Frontend JavaScript (surreal.js)**
+   - surreal.js einbinden
+   - HTMX Event-Handling implementieren
+   - Toast-Rendering via surreal
+
+4. **Phase 2+**: Session Management, Template Refactoring, Testing
+
+---
+
 ## 📋 Finalisierte Entscheidungen
 
 ### 1. Context-Wrapper
