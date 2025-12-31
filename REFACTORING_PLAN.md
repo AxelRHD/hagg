@@ -31,23 +31,31 @@
 
 ### 📅 Nächste Schritte
 
-1. **Phase 1, Point 1: Context-Wrapper + hxevents Package**
+1. **🚨 DRINGEND: Dokumentation aktualisieren**
+   - `README.md` komplett überarbeiten (neue Architektur dokumentieren)
+   - `ARCHITECTURE.md` aktualisieren (Chi, surreal + Alpine, neue Patterns)
+   - Alte Gin-Referenzen entfernen
+   - Neue Stack-Definition klären: HTMX · Alpine.js (state) · surreal.js (DOM) · Gomponents · Chi/Go
+   - **Warum zuerst:** Verhindert Verwirrung bei Projekt-Besuchern!
+
+2. **Phase 1, Point 1: Context-Wrapper + hxevents Package**
    - `hagg-lib/handler/context.go` erstellen (Option C: Fields + minimal helpers)
    - `hagg-lib/handler/hxevents/` package für Initial-Events erstellen
    - Tests schreiben
    - Dokumentation
 
-2. **Phase 1, Point 2: Chi Router Integration**
+3. **Phase 1, Point 2: Chi Router Integration**
    - Gin durch Chi v5 ersetzen
    - Middleware-Stack anpassen
    - Routes refactoren
 
-3. **Phase 1, Point 4: Frontend JavaScript (surreal.js)**
-   - surreal.js einbinden
+4. **Phase 1, Point 4: Frontend JavaScript (surreal.js)**
+   - surreal.js einbinden (zusätzlich zu Alpine.js)
    - HTMX Event-Handling implementieren
    - Toast-Rendering via surreal
+   - Alpine.js bleibt für client-side state management
 
-4. **Phase 2+**: Session Management, Template Refactoring, Testing
+5. **Phase 2+**: Session Management, Template Refactoring, Testing
 
 ---
 

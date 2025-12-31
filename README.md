@@ -1,5 +1,16 @@
 # hagg
 
+> **⚠️ REFACTORING IN PROGRESS (2024/2025)**
+> This project is currently being refactored with significant architectural changes:
+> - **Gin → Chi** (stdlib-compatible router)
+> - **+ surreal.js** (syntactic sugar for DOM operations) — Alpine.js stays for client-side state management
+> - **Tailwind CSS** (replacing Pico.css, keeping aesthetics)
+> - **Multi-repo structure** (hagg-lib + hagg boilerplate)
+>
+> **Current state:** Freeze point at `v0.9.0` (old Gin-based version).
+> **Documentation below describes the OLD architecture.** See `REFACTORING_PLAN.md` for new direction.
+> For production use, please wait for `v1.0.0` or use the frozen `v0.9.0` tag.
+
 `hagg` is a deliberately minimal baseline for **server-side rendered Go web applications**.
 It is designed for developers who want to build long-lived, maintainable tools — without SPA overhead,
 without build pipelines, and without hidden magic.
