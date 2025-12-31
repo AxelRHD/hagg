@@ -25,6 +25,7 @@ bin/
 log/
 tmp/
 .env
+project.txt
 casbin*
 *.zip
 *.sqlite3*

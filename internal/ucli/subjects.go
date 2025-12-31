@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/axelrhd/kl-toolbox/internal/user"
+	"github.com/axelrhd/hagg/internal/user"
 )
 
 func resolveSubjects(

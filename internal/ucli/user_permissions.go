@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/axelrhd/kl-toolbox/internal/config"
-	"github.com/axelrhd/kl-toolbox/internal/db"
-	"github.com/axelrhd/kl-toolbox/internal/user"
-	storeUserSqlite "github.com/axelrhd/kl-toolbox/internal/user/store_sqlite"
+	"github.com/axelrhd/hagg/internal/config"
+	"github.com/axelrhd/hagg/internal/db"
+	"github.com/axelrhd/hagg/internal/user"
+	storeUserSqlite "github.com/axelrhd/hagg/internal/user/store_sqlite"
 	"github.com/urfave/cli/v3"
 )
 

@@ -2,7 +2,6 @@ package user
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/axelrhd/litetime"
 )
@@ -28,7 +27,14 @@ func (u User) FullName() string {
 		return u.DisplayName
 	}
 
-	return strings.TrimSpace(u.FirstName + " " + u.LastName)
+	if u.FirstName == "" {
+		return u.LastName
+	}
+	if u.LastName == "" {
+		return u.FirstName
+	}
+
+	return u.LastName + ", " + u.FirstName
 }
 
 // -----------------------------------------------------------------------------

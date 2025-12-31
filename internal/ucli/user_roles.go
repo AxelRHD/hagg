@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/axelrhd/kl-toolbox/internal/config"
-	"github.com/axelrhd/kl-toolbox/internal/db"
-	storeUserSqlite "github.com/axelrhd/kl-toolbox/internal/user/store_sqlite"
+	"github.com/axelrhd/hagg/internal/config"
+	"github.com/axelrhd/hagg/internal/db"
+	storeUserSqlite "github.com/axelrhd/hagg/internal/user/store_sqlite"
 	"github.com/urfave/cli/v3"
 )
 

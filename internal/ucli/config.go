@@ -3,7 +3,7 @@ package ucli
 import (
 	"context"
 
-	"github.com/axelrhd/kl-toolbox/internal/config"
+	"github.com/axelrhd/hagg/internal/config"
 	"github.com/urfave/cli/v3"
 )
 

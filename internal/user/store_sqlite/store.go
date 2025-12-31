@@ -18,8 +18,8 @@ func New(db *sqlx.DB) *Store {
 // Compile-time interface check
 var _ user.Store = (*Store)(nil)
 
-func (s *Store) CreateUser(ctx context.Context, uid string) (*user.User, error) {
-	q := qCreateUser(uid)
+func (s *Store) CreateUser(ctx context.Context, uid, displayName string) (*user.User, error) {
+	q := qCreateUser(uid, displayName)
 
 	sql, args, err := q.ToSql()
 	if err != nil {
@@ -36,6 +36,23 @@ func (s *Store) CreateUser(ctx context.Context, uid string) (*user.User, error) 
 
 func (s *Store) FindByUID(ctx context.Context, uid string) (*user.User, error) {
 	q := qUserByUID(uid)
+
+	sql, args, err := q.ToSql()
+	if err != nil {
+		// SQL konnte nicht gebaut werden → Programmierfehler
+		return nil, err
+	}
+
+	var u user.User
+	if err := s.db.GetContext(ctx, &u, sql, args...); err != nil {
+		return nil, mapSQLError(err)
+	}
+
+	return &u, nil
+}
+
+func (s *Store) FindByDisplayName(ctx context.Context, displayName string) (*user.User, error) {
+	q := qUserByDisplayName(displayName)
 
 	sql, args, err := q.ToSql()
 	if err != nil {

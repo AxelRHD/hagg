@@ -1,11 +1,10 @@
 package ucli
 
 import (
-	kltoolbox "github.com/axelrhd/kl-toolbox"
-	"github.com/axelrhd/kl-toolbox/internal/config"
-	"github.com/axelrhd/kl-toolbox/internal/db"
-	storeHuSqlite "github.com/axelrhd/kl-toolbox/internal/hu/store_sqlite"
-	storeUserSqlite "github.com/axelrhd/kl-toolbox/internal/user/store_sqlite"
+	"github.com/axelrhd/hagg"
+	"github.com/axelrhd/hagg/internal/config"
+	"github.com/axelrhd/hagg/internal/db"
+	storeUserSqlite "github.com/axelrhd/hagg/internal/user/store_sqlite"
 )
 
 func serve() error {
@@ -18,8 +17,7 @@ func serve() error {
 	defer dbx.Close()
 
 	userStore := storeUserSqlite.New(dbx)
-	huStore := storeHuSqlite.New(dbx)
 
-	kltoolbox.StartServer(cfg, userStore, huStore)
+	hagg.StartServer(cfg, userStore)
 	return nil
 }

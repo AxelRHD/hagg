@@ -24,7 +24,7 @@ func Page(ctx *gin.Context, deps app.Deps) g.Node {
 	uid := ""
 	user, _ := deps.Auth.CurrentUser(ctx)
 	if user != nil {
-		uid = user.UID
+		uid = user.FullName()
 	}
 
 	content := g.Group{
