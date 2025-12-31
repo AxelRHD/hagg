@@ -642,10 +642,10 @@ go get github.com/axelrhd/hagg-lib@latest  # Update ohne Merge-Konflikt!
    - Testen
 
 3. **Tailwind CSS Setup**
-   - `npm install -D tailwindcss @tailwindcss/forms`
+   - Tailwind CLI binary nutzen (NO npm/node!)
    - tailwind.config.js erstellen (Pico-inspirierte Config)
    - static/css/base.css erstellen (Base-Styles + Components)
-   - Build-Script für CSS (Tailwind CLI oder PostCSS)
+   - justfile für CSS-Build (just css-watch / just css-build)
    - Pico.css entfernen
 
 4. **Frontend JavaScript**
@@ -933,21 +933,23 @@ func createStore(cfg config.Config, db *sql.DB) scs.Store {
 
 ### Tailwind CSS Setup Spec
 
-**File:** `hagg/package.json`
+**Installation:** Tailwind CLI (standalone binary, NO node/npm!)
 
-```json
-{
-  "name": "hagg",
-  "version": "1.0.0",
-  "scripts": {
-    "css:build": "tailwindcss -i ./static/css/base.css -o ./static/css/styles.css --minify",
-    "css:watch": "tailwindcss -i ./static/css/base.css -o ./static/css/styles.css --watch"
-  },
-  "devDependencies": {
-    "tailwindcss": "^3.4.0",
-    "@tailwindcss/forms": "^0.5.7"
-  }
-}
+```bash
+# Install to ~/.local/bin (einmalig)
+curl -sL https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-linux-x64 \
+  -o ~/.local/bin/tailwindcss
+chmod +x ~/.local/bin/tailwindcss
+```
+
+**justfile:**
+```justfile
+# justfile
+css-build:
+	tailwindcss -i ./static/css/base.css -o ./static/css/styles.css --minify
+
+css-watch:
+	tailwindcss -i ./static/css/base.css -o ./static/css/styles.css --watch
 ```
 
 **File:** `hagg/tailwind.config.js`
@@ -1099,10 +1101,14 @@ module.exports = {
 **Build-Prozess:**
 ```bash
 # Development (watch mode)
-npm run css:watch
+tailwindcss -i ./static/css/base.css -o ./static/css/styles.css --watch
 
 # Production (minified)
-npm run css:build
+tailwindcss -i ./static/css/base.css -o ./static/css/styles.css --minify
+
+# Oder via justfile
+just css-watch
+just css-build
 ```
 
 **Im Layout referenzieren:**
