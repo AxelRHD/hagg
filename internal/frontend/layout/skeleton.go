@@ -14,6 +14,7 @@ func Skeleton(req *http.Request, content ...g.Node) g.Node {
 	return Doctype(
 		HTML(
 			Lang("en"),
+			// Default theme (will be overridden by inline script if theme is saved)
 			Data("theme", "dark"),
 
 			Head(
@@ -29,6 +30,25 @@ func Skeleton(req *http.Request, content ...g.Node) g.Node {
 					Name("color-scheme"),
 					Content("light dark"),
 				),
+
+				// CRITICAL: Inline script to prevent theme flickering
+				// This must run BEFORE CSS loads to avoid FOUC (Flash of Unstyled Content)
+				// Alpine.js persist key format: _x_theme
+				g.Raw(`<script>
+					(function() {
+						try {
+							const stored = localStorage.getItem('_x_theme');
+							if (stored) {
+								const theme = JSON.parse(stored);
+								if (theme) {
+									document.documentElement.setAttribute('data-theme', theme);
+								}
+							}
+						} catch (e) {
+							// Ignore localStorage errors
+						}
+					})();
+				</script>`),
 
 				// --- ALPINE JS ---
 				Script(
