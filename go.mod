@@ -3,6 +3,8 @@ module github.com/axelrhd/hagg
 go 1.25.5
 
 require (
+	github.com/alexedwards/scs/sqlite3store v0.0.0-20251002162104-209de6e426de
+	github.com/alexedwards/scs/v2 v2.9.0
 	github.com/axelrhd/hagg-lib v0.0.0
 	github.com/axelrhd/litetime v0.1.0
 	github.com/casbin/casbin/v2 v2.135.0
@@ -11,10 +13,12 @@ require (
 	github.com/gin-contrib/sessions v1.0.4
 	github.com/gin-gonic/gin v1.11.0
 	github.com/glsubri/gomponents-alpine v0.2.2
+	github.com/go-chi/chi/v5 v5.2.3
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/joho/godotenv v1.5.1
 	github.com/k0kubun/pp/v3 v3.5.0
 	github.com/kelseyhightower/envconfig v1.4.0
+	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/nullism/bqb v1.7.4
 	github.com/rodaine/table v1.3.0
 	github.com/urfave/cli/v3 v3.6.1

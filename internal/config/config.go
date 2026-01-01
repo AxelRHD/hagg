@@ -41,6 +41,7 @@ type SessionConfig struct {
 	Secret     string        `envconfig:"SECRET" required:"true"`
 	MaxAge     time.Duration `envconfig:"MAX_AGE" default:"720h"` // 30 Tage
 	CookieName string        `envconfig:"COOKIE_NAME" default:"my_hagg_app"`
+	DBPath     string        `envconfig:"DB_PATH" default:"./data/sessions.db"` // SCS session storage
 }
 
 // ------------------------------------------------------------
@@ -212,7 +213,8 @@ func printSession(s SessionConfig) {
 	fmt.Println("├─ Session")
 	fmt.Printf("│  ├─ CookieName : %s\n", s.CookieName)
 	fmt.Printf("│  ├─ MaxAge     : %s\n", s.MaxAge)
-	fmt.Printf("│  └─ Secret     : %s\n", s.Secret)
+	fmt.Printf("│  ├─ Secret     : %s\n", s.Secret)
+	fmt.Printf("│  └─ DBPath     : %s\n", s.DBPath)
 }
 
 func printCasbin(c CasbinConfig) {

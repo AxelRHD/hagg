@@ -4,16 +4,20 @@ import (
 	"embed"
 	"io/fs"
 	"log"
+	"log/slog"
 	"net"
 	"net/http"
 	"os"
 	"path/filepath"
 
 	"github.com/axelrhd/hagg-lib/casbinx"
+	"github.com/axelrhd/hagg-lib/handler"
 	libmw "github.com/axelrhd/hagg-lib/middleware"
 	"github.com/axelrhd/hagg/internal/app"
 	"github.com/axelrhd/hagg/internal/auth"
 	"github.com/axelrhd/hagg/internal/config"
+	"github.com/axelrhd/hagg/internal/server"
+	"github.com/axelrhd/hagg/internal/session"
 	"github.com/axelrhd/hagg/internal/user"
 
 	"github.com/gin-contrib/sessions"
@@ -27,18 +31,42 @@ var embeddedFs embed.FS
 // StartServer startet den HTTP-Server entweder
 // - über TCP (DEV)
 // - oder über Unix-Socket (PROD)
+//
+// PHASE 2 MIGRATION: Dual-server setup
+// - Gin server runs on :8080 (existing)
+// - Chi server runs on :8081 (new, for testing)
 func StartServer(cfg *config.Config, usrStore user.Store) {
-	router := buildRouter(cfg, usrStore)
+	// Initialize SCS session manager
+	if err := session.Init(cfg.Session.DBPath); err != nil {
+		log.Fatal("failed to init sessions:", err)
+	}
+
+	// Build Gin router (existing)
+	ginRouter := buildRouter(cfg, usrStore)
+
+	// Build Chi router (new)
+	wrapper := handler.NewWrapper(slog.Default())
+	chiRouter := server.NewChiServer(wrapper)
 
 	// 🔀 Socket oder TCP?
 	if cfg.Server.Socket != "" {
-		startUnixSocket(router, cfg.Server.Socket)
+		// For Unix socket, use Gin for now
+		startUnixSocket(ginRouter, cfg.Server.Socket)
 		return
 	}
 
-	// klassisch (DEV)
-	log.Println("Listening on", cfg.Addr())
-	if err := router.Run(cfg.Addr()); err != nil {
+	// Dual-server mode (DEV)
+	// Start Chi server on :8081 in background
+	go func() {
+		log.Println("Chi server listening on :8081")
+		if err := http.ListenAndServe(":8081", chiRouter); err != nil {
+			log.Fatal("Chi server error:", err)
+		}
+	}()
+
+	// Start Gin server on configured port (default :8080)
+	log.Println("Gin server listening on", cfg.Addr())
+	if err := ginRouter.Run(cfg.Addr()); err != nil {
 		log.Fatal(err)
 	}
 }
