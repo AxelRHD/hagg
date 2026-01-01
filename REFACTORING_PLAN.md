@@ -36,6 +36,7 @@
    - `ARCHITECTURE.md` aktualisieren (Chi, surreal + Alpine, neue Patterns)
    - Alte Gin-Referenzen entfernen
    - Neue Stack-Definition klären: HTMX · Alpine.js (state) · surreal.js (DOM) · Gomponents · Chi/Go
+   - **TODO:** Erwähnen, dass nicht nur der Output, sondern auch die Reise/der Prozess Kern des Projekts sind
    - **Warum zuerst:** Verhindert Verwirrung bei Projekt-Besuchern!
 
 2. **Phase 1, Point 1: Context-Wrapper + hxevents Package**
