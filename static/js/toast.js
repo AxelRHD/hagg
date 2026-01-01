@@ -25,17 +25,11 @@ const TOAST_ICONS = {
 }
 
 // Create toast containers on page load
-me(document).on('DOMContentLoaded', () => {
-    createToastContainer('bottom-right')
-    createToastContainer('top-right')
-    createToastContainer('bottom-left')
-    createToastContainer('top-left')
-})
 
-// Create a toast container if it doesn't exist
-function createToastContainer(position) {
-    if (me(`#toast-container-${position}`)) return
-
+// Show a toast notification
+// Matches the toast.Toast struct from Go
+function showToast({ message, level = 'info', timeout = 5000, position = 'bottom-right' }) {
+    // Position styles
     const positionStyles = {
         'bottom-right': 'position: fixed; bottom: 1rem; right: 1rem; z-index: 9999;',
         'top-right': 'position: fixed; top: 1rem; right: 1rem; z-index: 9999;',
@@ -43,26 +37,11 @@ function createToastContainer(position) {
         'top-left': 'position: fixed; top: 1rem; left: 1rem; z-index: 9999;',
     }
 
-    const container = document.createElement('div')
-    container.id = `toast-container-${position}`
-    container.setAttribute('style', positionStyles[position] || positionStyles['bottom-right'])
-    document.body.appendChild(container)
-}
-
-// Show a toast notification
-// Matches the toast.Toast struct from Go
-function showToast({ message, level = 'info', timeout = 5000, position = 'bottom-right' }) {
-    const container = me(`#toast-container-${position}`)
-    if (!container) {
-        console.error('Toast container not found:', position)
-        return
-    }
-
     const icon = TOAST_ICONS[level] || TOAST_ICONS.info
     const toastHtml = `
-        <div class="toast toast-${level}" style="opacity: 0; transition: opacity 0.3s;">
-            <div style="display: flex; gap: 0.75rem; align-items: start;">
-                <div style="flex-shrink: 0; margin-top: 0.125rem;">
+        <div class="toast toast-${level}" style="opacity: 0; transition: opacity 0.3s; ${positionStyles[position] || positionStyles['bottom-right']}">
+            <div style="display: flex; gap: 0.75rem; align-items: center;">
+                <div style="flex-shrink: 0;">
                     ${icon}
                 </div>
                 <div style="flex: 1;">
@@ -72,8 +51,9 @@ function showToast({ message, level = 'info', timeout = 5000, position = 'bottom
         </div>
     `
 
-    container.insertAdjacentHTML('beforeend', toastHtml)
-    const toast = container.lastElementChild
+    // Append directly to body
+    document.body.insertAdjacentHTML('beforeend', toastHtml)
+    const toast = document.body.lastElementChild
 
     // Fade in animation
     setTimeout(() => {
@@ -84,7 +64,7 @@ function showToast({ message, level = 'info', timeout = 5000, position = 'bottom
     if (timeout > 0) {
         setTimeout(() => {
             toast.style.opacity = '0'
-            setTimeout(() => me(toast).remove(), 300)
+            setTimeout(() => toast.remove(), 300)
         }, timeout)
     }
 }

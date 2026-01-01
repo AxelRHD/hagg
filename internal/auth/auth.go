@@ -1,8 +1,9 @@
 package auth
 
 import (
-	"github.com/gin-contrib/sessions"
-	"github.com/gin-gonic/gin"
+	"net/http"
+
+	"github.com/axelrhd/hagg/internal/session"
 	"github.com/axelrhd/hagg/internal/user"
 )
 
@@ -18,50 +19,38 @@ func New(users user.Store) *Auth {
 	}
 }
 
-func (a *Auth) Login(ctx *gin.Context, uid string) (*user.User, error) {
-	u, err := a.users.FindByUID(ctx.Request.Context(), uid)
+// Login authenticates a user and creates a session.
+func (a *Auth) Login(req *http.Request, uid string) (*user.User, error) {
+	u, err := a.users.FindByUID(req.Context(), uid)
 	if err != nil {
-		return nil, err // z. B. ErrNotFound
-	}
-
-	sess := sessions.Default(ctx)
-	sess.Set(SessionKeyUID, u.UID)
-
-	if err := sess.Save(); err != nil {
 		return nil, err
 	}
 
+	session.Manager.Put(req.Context(), SessionKeyUID, u.UID)
 	return u, nil
 }
 
-func (a *Auth) Logout(ctx *gin.Context) error {
-	sess := sessions.Default(ctx)
-
-	// sess.Delete(SessionKeyUID)
-	sess.Set(SessionKeyUID, "")
-
-	return sess.Save()
+// Logout clears the user session.
+func (a *Auth) Logout(req *http.Request) error {
+	session.Manager.Put(req.Context(), SessionKeyUID, "")
+	return nil
 }
 
-func (a *Auth) IsAuthenticated(ctx *gin.Context) bool {
-	_, ok := a.CurrentUser(ctx)
+// IsAuthenticated checks if a user is authenticated.
+func (a *Auth) IsAuthenticated(req *http.Request) bool {
+	_, ok := a.CurrentUser(req)
 	return ok
 }
 
-func (a *Auth) CurrentUser(ctx *gin.Context) (*user.User, bool) {
-	sess := sessions.Default(ctx)
-
-	rawUID := sess.Get(SessionKeyUID)
-	if rawUID == nil {
-		return nil, false
-	}
-
+// CurrentUser retrieves the currently authenticated user.
+func (a *Auth) CurrentUser(req *http.Request) (*user.User, bool) {
+	rawUID := session.Manager.Get(req.Context(), SessionKeyUID)
 	uid, ok := rawUID.(string)
 	if !ok || uid == "" {
 		return nil, false
 	}
 
-	u, err := a.users.FindByUID(ctx.Request.Context(), uid)
+	u, err := a.users.FindByUID(req.Context(), uid)
 	if err != nil {
 		return nil, false
 	}

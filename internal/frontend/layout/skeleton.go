@@ -1,13 +1,14 @@
 package layout
 
 import (
-	"github.com/axelrhd/hagg-lib/view"
-	"github.com/gin-gonic/gin"
+	"net/http"
+
 	g "maragu.dev/gomponents"
 	. "maragu.dev/gomponents/html"
 )
 
-func Skeleton(ctx *gin.Context, content ...g.Node) g.Node {
+// Skeleton renders the HTML document structure.
+func Skeleton(req *http.Request, content ...g.Node) g.Node {
 	grp := g.Group(content)
 
 	return Doctype(
@@ -30,41 +31,38 @@ func Skeleton(ctx *gin.Context, content ...g.Node) g.Node {
 				),
 
 				// --- ALPINE JS ---
-				view.Script(ctx, "/static/js/alpine_persist.min.js",
+				Script(
+					Src("/static/js/alpine_persist.min.js"),
 					Defer(),
 				),
-				view.Script(ctx, "/static/js/alpine.min.js",
+				Script(
+					Src("/static/js/alpine.min.js"),
 					Defer(),
 				),
 
 				// --- HTMX ---
-				view.Script(ctx, "/static/js/htmx.min.js"),
+				Script(Src("/static/js/htmx.min.js")),
 
 				// --- SURREAL JS ---
-				view.Script(ctx, "/static/js/surreal_v1.3.4.js"),
+				Script(Src("/static/js/surreal_v1.3.4.js")),
 
-				// --- NOTIE ---
-				view.Stylesheet(ctx, "/static/css/notie.min.css"),
-				view.Script(ctx, "/static/js/notie.min.js"),
-				Script(
-					g.Raw("notie.setOptions({ positions: { alert: 'bottom', force: 'bottom', confirm: 'bottom', input: 'bottom' } })"),
-				),
+				// --- TOAST JS ---
+				Script(Src("/static/js/toast.js")),
 
-				// --- FLEXBOXGRID CSS ---
-				view.Stylesheet(ctx, "/static/css/flexboxgrid.min.css"),
+				// --- TAILWIND CSS (with Pico-inspired semantic HTML styles) ---
+				Link(Rel("stylesheet"), Href("/static/css/styles.css")),
 
-				// --- TACHYONS CSS ---
-				view.Stylesheet(ctx, "/static/css/tachyons.min.css"),
-
-				// --- PICO CSS ---
-				view.Stylesheet(ctx, "/static/css/pico.min.css"),
-				view.Stylesheet(ctx, "/static/css/pico.colors.min.css"),
-
-				// --- APP CSS ---
-				view.Stylesheet(ctx, "/static/css/app.css"),
+				// --- APP CSS (custom overrides) ---
+				Link(Rel("stylesheet"), Href("/static/css/app.css")),
 			),
 			Body(
+				// Alpine.js state for theme toggle - must be on body tag
+				g.Attr("x-data", "{ theme: $persist('') }"),
+				g.Attr("x-effect", "theme !== '' && document.documentElement.setAttribute('data-theme', theme)"),
+
 				grp,
+				// Toasts are rendered as self-destructing elements by RenderEvents()
+				// No script processing needed - Surreal.js handles me().remove()
 			),
 		),
 	)

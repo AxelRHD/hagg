@@ -1,63 +1,56 @@
 package login
 
 import (
-	"log"
-	"net/http"
-
-	"github.com/axelrhd/hagg-lib/flash"
-	"github.com/axelrhd/hagg-lib/notie"
-	"github.com/axelrhd/hagg-lib/view"
+	"github.com/axelrhd/hagg-lib/handler"
 	"github.com/axelrhd/hagg/internal/app"
-	"github.com/gin-gonic/gin"
+	"github.com/axelrhd/hagg/internal/shared"
 )
 
-func HxLogin(deps app.Deps) gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-
-		reqData := struct {
-			UID string `form:"uid" json:"uid"`
-		}{}
-
-		err := ctx.Bind(&reqData)
-		if err != nil {
-			notie.NewAlert(err.Error()).Error().Notify(ctx)
-			log.Println(err)
-
-			ctx.Status(http.StatusNoContent)
-			return
+// HxLogin handles HTMX login requests.
+// It validates the UID, attempts login, and returns appropriate toast notifications.
+func HxLogin(deps app.Deps) handler.HandlerFunc {
+	return func(ctx *handler.Context) error {
+		// Parse form data
+		if err := ctx.Req.ParseForm(); err != nil {
+			ctx.Toast("Invalid form data").Error().Notify()
+			return ctx.NoContent()
 		}
 
-		_, err = deps.Auth.Login(ctx, reqData.UID)
-		if err != nil {
-			notie.NewAlert(err.Error()).Error().Notify(ctx)
-
-			ctx.Status(http.StatusNoContent)
-			return
+		uid := ctx.Req.FormValue("uid")
+		if uid == "" {
+			ctx.Toast("UID is required").Error().Notify()
+			return ctx.NoContent()
 		}
 
-		// hxevents.Add(ctx, hxevents.Immediate, "update-nav", true)
-		notie.NewAlert("Login erfolgreich.").Success().Notify(ctx)
-		// TODO: Re-enable after migration to Chi/handler.Context
-		// hxevents.Add(ctx, hxevents.Immediate, "auth-changed", true)
+		// Attempt login
+		_, err := deps.Auth.Login(ctx.Req, uid)
+		if err != nil {
+			ctx.Toast(err.Error()).Error().Notify()
+			return ctx.NoContent()
+		}
 
-		ctx.Status(http.StatusNoContent)
+		// Success
+		ctx.Toast("Login erfolgreich.").Success().Notify()
+		ctx.Event("auth-changed", true)
+		return ctx.NoContent()
 	}
 }
 
-func HxLogout(deps app.Deps) gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		err := deps.Auth.Logout(ctx)
+// HxLogout handles HTMX logout requests.
+// It clears the session, sets a flash message, and redirects to home.
+func HxLogout(deps app.Deps) handler.HandlerFunc {
+	return func(ctx *handler.Context) error {
+		err := deps.Auth.Logout(ctx.Req)
 		if err != nil {
-			notie.NewAlert(err.Error()).Error().Notify(ctx)
-
-			ctx.Status(http.StatusNoContent)
-			return
+			ctx.Toast(err.Error()).Error().Notify()
+			return ctx.NoContent()
 		}
 
-		flash.Set(ctx, flash.LogoutSuccess)
+		// Set flash message for redirect
+		shared.SetFlash(ctx, "success", "Logout erfolgreich.")
 
-		// ctx.Redirect(http.StatusFound, shared.Lnk(ctx, "/"))
-		ctx.Header("HX-Redirect", view.URLString(ctx, "/"))
-		// ctx.Abort()
+		// HX-Redirect header (must be set before calling NoContent)
+		ctx.Res.Header().Set("HX-Redirect", "/")
+		return ctx.NoContent()
 	}
 }

@@ -1,25 +1,32 @@
 package layout
 
 import (
-	"github.com/axelrhd/hagg-lib/notie"
+	"github.com/axelrhd/hagg-lib/handler"
 	"github.com/axelrhd/hagg/internal/app"
 	"github.com/axelrhd/hagg/internal/frontend/shared"
-	"github.com/gin-gonic/gin"
-	x "github.com/glsubri/gomponents-alpine"
+	appshared "github.com/axelrhd/hagg/internal/shared"
 	g "maragu.dev/gomponents"
 	. "maragu.dev/gomponents/html"
 )
 
-func Page(ctx *gin.Context, deps app.Deps, content ...g.Node) g.Node {
-	shared.HandleFlash(ctx)
+// Page renders the full page layout with navbar, content, and event handling.
+func Page(ctx *handler.Context, deps app.Deps, content ...g.Node) g.Node {
+	// Convert flash messages to toast events
+	flashMessages := appshared.GetFlashMessages(ctx)
+	for _, msg := range flashMessages {
+		switch msg.Level {
+		case "success":
+			ctx.Toast(msg.Message).Success().Notify()
+		case "error":
+			ctx.Toast(msg.Message).Error().Notify()
+		case "warning":
+			ctx.Toast(msg.Message).Warning().Notify()
+		case "info":
+			ctx.Toast(msg.Message).Info().Notify()
+		}
+	}
 
 	cn := g.Group{
-		// alpine
-		x.Data("{ picoTheme: $persist('')}"),
-		x.Effect("picoTheme !== '' && document.documentElement.setAttribute('data-theme', picoTheme)"),
-		// x.On("notie-alert.document", "notie.alert({ type: $event.detail.type, text: $event.detail.text, position: $event.detail.position, time: $event.detail.time, stay: $event.detail.stay })"),
-		x.On("notie-alert.document", "notie.alert({ ...$event.detail })"),
-
 		Div(
 			ID("page"),
 
@@ -33,8 +40,9 @@ func Page(ctx *gin.Context, deps app.Deps, content ...g.Node) g.Node {
 			),
 		),
 
-		notie.FromContext(ctx),
+		// Render initial events for full-page loads (uses existing RenderEvents from events.go)
+		RenderEvents(ctx),
 	}
 
-	return Skeleton(ctx, cn...)
+	return Skeleton(ctx.Req, cn...)
 }

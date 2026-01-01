@@ -1,75 +1,49 @@
 package login
 
 import (
-	"log"
-
+	"github.com/axelrhd/hagg-lib/handler"
 	"github.com/axelrhd/hagg-lib/view"
 	"github.com/axelrhd/hagg/internal/app"
 	"github.com/axelrhd/hagg/internal/frontend/layout"
-	"github.com/gin-gonic/gin"
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
 	. "maragu.dev/gomponents/html"
 )
 
-func Page(ctx *gin.Context, deps app.Deps) g.Node {
-	sub := "arudolf" // oder ctx.MustGet(...) → aktuell fest verdrahtet
-	ok, err := deps.Enforcer.Enforce(sub, "user:list")
-	if err != nil {
-		log.Println("casbin error:", err)
-	} else {
-		log.Println("casbin user:list allowed =", ok)
-	}
+// Page is the login page handler.
+// It renders the login form or logout button depending on authentication status.
+func Page(ctx *handler.Context, deps app.Deps) error {
+	user, _ := deps.Auth.CurrentUser(ctx.Req)
 
-	uid := ""
-	user, _ := deps.Auth.CurrentUser(ctx)
+	loginURL := view.URLStringChi(ctx.Req, "/htmx/login")
+	logoutURL := view.URLStringChi(ctx.Req, "/htmx/logout")
+
+	// Extract username safely
+	username := ""
 	if user != nil {
-		uid = user.FullName()
+		username = user.FullName()
 	}
 
-	content := g.Group{
-		Div(
-			hx.Post(view.URLString(ctx, "/")),
-			hx.Trigger("auth-changed from:body"),
-			hx.Target("#page"),
-			hx.Select("#page"),
-			hx.Swap("outerHTML"),
+	content := Div(
+		// HTMX auto-refresh on auth-changed event
+		hx.Post(view.URLStringChi(ctx.Req, "/")),
+		hx.Trigger("auth-changed from:body"),
+		hx.Target("#page"),
+		hx.Select("#page"),
+		hx.Swap("outerHTML"),
 
-			// Centering
-			Class("flex items-center justify-center pa3"),
-			Style("min-height: 80vh"),
+		// Centering
+		Class("flex items-center justify-center pa3"),
+		Style("min-height: 80vh"),
 
-			g.If(!deps.Auth.IsAuthenticated(ctx),
-				LoginForm(ctx),
-			),
-
-			g.If(deps.Auth.IsAuthenticated(ctx),
-				Article(
-					Class("w-100 mw6 tc"),
-
-					H3(g.Text("Bereits eingeloggt")),
-
-					P(
-						Class("f6 mt2"),
-						g.Text("Du bist angemeldet als "),
-						Strong(g.Text(uid)),
-						g.Text("."),
-					),
-
-					Form(
-						hx.Post(view.URLString(ctx, "/htmx/logout")),
-						Class("mt3"),
-
-						Button(
-							Type("submit"),
-							Class("outline"),
-							g.Text("Abmelden"),
-						),
-					),
-				),
-			),
+		g.If(!deps.Auth.IsAuthenticated(ctx.Req),
+			LoginForm(loginURL),
 		),
-	}
 
-	return layout.Page(ctx, deps, content...)
+		g.If(deps.Auth.IsAuthenticated(ctx.Req) && username != "",
+			LogoutButton(logoutURL, username),
+		),
+	)
+
+	return ctx.Render(layout.Page(ctx, deps, content))
 }

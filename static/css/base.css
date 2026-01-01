@@ -1,86 +1,312 @@
 @import "tailwindcss";
 
+/* ============================================
+   THEME TOKENS
+   ============================================ */
 @theme {
-  /* Pico-inspired colors (wärmer) */
-  --color-primary-50: #eff6ff;
-  --color-primary-100: #dbeafe;
-  --color-primary-200: #bfdbfe;
-  --color-primary-300: #93c5fd;
-  --color-primary-400: #60a5fa;
-  --color-primary-500: #1095c1;  /* Pico's actual blue - wärmer */
+  --color-primary-500: #1095c1;
   --color-primary-600: #0d7a96;
-  --color-primary-700: #0a5f75;
-  --color-primary-800: #084454;
-  --color-primary-900: #052933;
-
-  --color-success: #43a047;  /* Wärmeres Grün */
-  --color-error: #e53935;    /* Wärmeres Rot */
-  --color-warning: #fb8c00;  /* Wärmeres Orange */
-  --color-info: #1095c1;
-
-  /* Pico-inspired radius */
-  --radius-pico: 0.375rem;
-
-  /* Pico-inspired shadows */
-  --shadow-pico: 0 0 0 1px rgb(0 0 0 / 0.05), 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-pico-lg: 0 0 0 1px rgb(0 0 0 / 0.05), 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  --color-success: #43a047;
+  --color-error: #e53935;
+  --color-warning: #fb8c00;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
 }
 
-/* Light mode (default) - Pico colors */
+/* ============================================
+   CSS VARIABLES
+   ============================================ */
 :root {
-  --bg-primary: #fafafa;      /* Warmer off-white */
-  --bg-secondary: #ffffff;
-  --text-primary: #1b1f22;    /* Warmes Dunkelgrau */
-  --text-secondary: #646b75;
-  --border-color: #dfe3e8;    /* Warmes Grau */
+  --bg-page: #fafafa;
+  --bg-card: #ffffff;
+  --text-primary: #373c44;
+  --text-secondary: #646b79;
+  --border: #dfe3e8;
+  --spacing: 1rem;
+  --font-size: 100%;
 }
 
-/* Dark mode - Pico dark theme */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg-primary: #11191f;      /* Pico's dark background */
-    --bg-secondary: #171e25;
-    --text-primary: #c2cbd4;    /* Helles Grau */
-    --text-secondary: #8b95a1;
-    --border-color: #202930;
-
-    /* Gedämpftere Schatten für Dark Mode */
-    --shadow-pico: 0 0 0 1px rgb(255 255 255 / 0.05), 0 1px 2px 0 rgb(0 0 0 / 0.3);
-    --shadow-pico-lg: 0 0 0 1px rgb(255 255 255 / 0.05), 0 4px 6px -1px rgb(0 0 0 / 0.4);
+/* Pico responsive font scaling */
+@media (min-width: 576px) {
+  :root {
+    --font-size: 106.25%;
   }
 }
 
-/* Manual dark mode toggle */
+@media (min-width: 768px) {
+  :root {
+    --font-size: 112.5%;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --font-size: 118.75%;
+  }
+}
+
+@media (min-width: 1280px) {
+  :root {
+    --font-size: 125%;
+  }
+}
+
+@media (min-width: 1536px) {
+  :root {
+    --font-size: 131.25%;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg-page: #0d1117;
+    --bg-card: #161b22;
+    --text-primary: #e6edf3;
+    --text-secondary: #8b949e;
+    --border: #30363d;
+  }
+
+  /* Apply same responsive font scaling in dark mode */
+  @media (min-width: 576px) {
+    :root:not([data-theme="light"]) {
+      --font-size: 106.25%;
+    }
+  }
+
+  @media (min-width: 768px) {
+    :root:not([data-theme="light"]) {
+      --font-size: 112.5%;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    :root:not([data-theme="light"]) {
+      --font-size: 118.75%;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    :root:not([data-theme="light"]) {
+      --font-size: 125%;
+    }
+  }
+
+  @media (min-width: 1536px) {
+    :root:not([data-theme="light"]) {
+      --font-size: 131.25%;
+    }
+  }
+}
+
 :root[data-theme="dark"] {
-  --bg-primary: #11191f;
-  --bg-secondary: #171e25;
-  --text-primary: #c2cbd4;
-  --text-secondary: #8b95a1;
-  --border-color: #202930;
-  --shadow-pico: 0 0 0 1px rgb(255 255 255 / 0.05), 0 1px 2px 0 rgb(0 0 0 / 0.3);
-  --shadow-pico-lg: 0 0 0 1px rgb(255 255 255 / 0.05), 0 4px 6px -1px rgb(0 0 0 / 0.4);
+  --bg-page: #0d1117;
+  --bg-card: #161b22;
+  --text-primary: #e6edf3;
+  --text-secondary: #8b949e;
+  --border: #30363d;
 }
 
-/* Base styling - Pico-inspired */
+/* ============================================
+   BASE
+   ============================================ */
+* {
+  box-sizing: border-box;
+}
+
+/* Apply font-size to :root like Pico */
+:where(:root) {
+  font-size: var(--font-size);
+}
+
 body {
-  background-color: var(--bg-primary);
+  margin: 0;
+  background-color: var(--bg-page);
   color: var(--text-primary);
-  line-height: 1.625;
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  transition: background-color 0.2s, color 0.2s;
+  font-family: system-ui, -apple-system, sans-serif;
+  line-height: 1.5;
 }
 
-/* Forms - Pico-inspired */
+/* ============================================
+   TYPOGRAPHY (Pico-style)
+   ============================================ */
+
+/* Heading custom properties (Pico approach) */
+h1 {
+  --font-size: 2rem;
+  --line-height: 1.125;
+  --typography-spacing-top: 3rem;
+}
+
+h2 {
+  --font-size: 1.75rem;
+  --line-height: 1.15;
+  --typography-spacing-top: 2.625rem;
+}
+
+h3 {
+  --font-size: 1.5rem;
+  --line-height: 1.175;
+  --typography-spacing-top: 2.25rem;
+}
+
+h4 {
+  --font-size: 1.25rem;
+  --line-height: 1.2;
+  --typography-spacing-top: 1.875rem;
+}
+
+h5 {
+  --font-size: 1.125rem;
+  --line-height: 1.225;
+  --typography-spacing-top: 1.6875rem;
+}
+
+h6 {
+  --font-size: 1rem;
+  --line-height: 1.25;
+  --typography-spacing-top: 1.5rem;
+}
+
+/* Apply heading styles */
+h1, h2, h3, h4, h5, h6 {
+  margin-top: 0;
+  margin-bottom: var(--spacing);
+  font-weight: 700;
+  font-size: var(--font-size);
+  line-height: var(--line-height);
+  color: var(--text-primary);
+}
+
+/* Spacing after block elements (Pico pattern) */
+:where(article, address, blockquote, dl, figure, form, ol, p, pre, table, ul) ~ :is(h1, h2, h3, h4, h5, h6) {
+  margin-top: var(--typography-spacing-top);
+}
+
+p {
+  margin-top: 0;
+  margin-bottom: var(--spacing);
+  color: var(--text-secondary);
+}
+
+small {
+  font-size: 0.875em;
+}
+
+strong, b {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* ============================================
+   LINKS
+   ============================================ */
+a {
+  color: var(--color-primary-500);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--color-primary-600);
+  text-decoration: underline;
+}
+
+/* ============================================
+   NAVIGATION (Pico-style)
+   ============================================ */
+nav {
+  display: flex;
+  justify-content: space-between;
+  overflow: visible;
+}
+
+nav ul {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  margin-bottom: 0;
+  padding: 0;
+  list-style: none;
+}
+
+nav li {
+  display: inline-block;
+  margin: 0;
+  padding: var(--spacing) 0.5rem;
+}
+
+nav li a {
+  display: inline-block;
+  margin: calc(0.5rem * -1) calc(0.5rem * -1);
+  padding: 0.5rem 0.5rem;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  font-size: 1.125rem;
+}
+
+nav li a:hover {
+  background-color: rgba(16, 149, 193, 0.08);
+  text-decoration: none;
+}
+
+/* Nav brand/header */
+nav strong {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+/* Nav buttons - Pico style */
+nav li button {
+  height: auto;
+  margin-right: inherit;
+  margin-bottom: 0;
+  margin-left: inherit;
+  padding: calc(0.5rem - 0.125rem) 0.5rem;
+}
+
+/* Theme toggle - just icon, no button styling */
+nav li button.theme-toggle {
+  padding: 0;
+  margin: 0;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ============================================
+   ARTICLE
+   ============================================ */
+article {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: calc(var(--spacing) * 2);
+  margin-bottom: calc(var(--spacing) * 2);
+}
+
+@media (max-width: 767px) {
+  article {
+    padding: calc(var(--spacing) * 1.5);
+  }
+}
+
+/* ============================================
+   FORMS
+   ============================================ */
 input:not([type="checkbox"]):not([type="radio"]),
 textarea,
 select {
-  border-radius: var(--radius-pico);
-  box-shadow: var(--shadow-pico);
-  border: 1px solid var(--border-color);
-  background-color: var(--bg-secondary);
+  display: block;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
   color: var(--text-primary);
-  padding: 0.5rem 0.75rem;
-  transition: border-color 0.15s, box-shadow 0.15s, background-color 0.2s;
+  font-size: 1rem;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 input:focus,
@@ -88,143 +314,141 @@ textarea:focus,
 select:focus {
   outline: none;
   border-color: var(--color-primary-500);
-  box-shadow: 0 0 0 3px rgb(16 149 193 / 0.15);
+  box-shadow: 0 0 0 3px rgba(16, 149, 193, 0.1);
 }
 
-/* Buttons - Pico-inspired */
+/* Pico-style vertical rhythm in forms */
+input:not([type="checkbox"]):not([type="radio"]),
+button,
+textarea,
+select {
+  margin-bottom: var(--spacing);
+}
+
+form > :last-child,
+fieldset > :last-child {
+  margin-bottom: 0;
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
 button,
 [role="button"] {
-  border-radius: var(--radius-pico);
-  box-shadow: var(--shadow-pico);
-  padding: 0.5rem 1rem;
-  font-weight: 500;
-  transition: background-color 0.15s, color 0.15s;
-  cursor: pointer;
-  border: none;
-}
-
-/* Headings */
-h1, h2, h3, h4, h5, h6 {
-  font-weight: 600;
-  margin-bottom: 1rem;
-  color: var(--text-primary);
-}
-
-h1 { font-size: 1.875rem; }
-h2 { font-size: 1.5rem; }
-h3 { font-size: 1.25rem; }
-
-p {
-  color: var(--text-secondary);
-}
-
-/* Component classes */
-.btn-primary {
+  display: inline-block;
+  padding: 0.75rem 1rem;
   background-color: var(--color-primary-500);
   color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s;
 }
 
-.btn-primary:hover {
+/* Pico: submit buttons are full width by default */
+button[type="submit"] {
+  width: 100%;
+}
+
+button:hover {
   background-color: var(--color-primary-600);
 }
 
-.btn-secondary {
-  background-color: var(--border-color);
-  color: var(--text-primary);
-}
-
-.btn-secondary:hover {
-  background-color: var(--text-secondary);
-  color: var(--bg-secondary);
-}
-
-.btn-danger {
-  background-color: var(--color-error);
+button.secondary {
+  background-color: #525f7a;
   color: white;
+  border: none;
 }
 
-.btn-danger:hover {
-  background-color: #c62828;
+button.secondary:hover {
+  background-color: #48536b;
 }
 
-.card {
-  background-color: var(--bg-secondary);
-  border-radius: var(--radius-pico);
-  box-shadow: var(--shadow-pico-lg);
-  padding: 1.5rem;
-  border: 1px solid var(--border-color);
-  transition: background-color 0.2s, border-color 0.2s;
+button.outline {
+  background-color: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+
+button.outline:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+button.contrast {
+  background-color: var(--text-primary);
+  color: var(--bg-card);
+  border: none;
+}
+
+button.contrast:hover {
+  opacity: 0.9;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) button.secondary {
+    background-color: rgba(255, 255, 255, 0.08);
+  }
+
+  :root:not([data-theme="light"]) button.secondary:hover {
+    background-color: rgba(255, 255, 255, 0.12);
+  }
+}
+
+:root[data-theme="dark"] button.secondary {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+:root[data-theme="dark"] button.secondary:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+/* ============================================
+   CONTAINERS
+   ============================================ */
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--spacing);
+  padding-right: var(--spacing);
 }
 
 .container-narrow {
-  max-width: 56rem;
+  width: 100%;
+  max-width: 600px;
   margin-left: auto;
   margin-right: auto;
-  padding-left: 1rem;
-  padding-right: 1rem;
 }
 
-/* Toasts */
+@media (min-width: 768px) {
+  .container-narrow {
+    max-width: 700px;
+  }
+}
+
+.text-center {
+  text-align: center;
+}
+
+/* ============================================
+   TOASTS
+   ============================================ */
 .toast {
-  background-color: #f8f8f8;  /* Light mode: Nur minimal dunkler als Page (#fafafa) */
-  border-radius: var(--radius-pico);
-  box-shadow: var(--shadow-pico-lg);
-  border: 1px solid var(--border-color);
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
   border-left-width: 4px;
-  padding: 1rem;
+  border-radius: var(--radius-md);
+  padding: var(--spacing);
   margin-bottom: 0.5rem;
   min-width: 300px;
-  max-width: 28rem;
-  transition: opacity 0.3s, background-color 0.2s;
-  color: var(--text-primary);
+  max-width: 500px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-/* Toast in Dark Mode: Heller als Page */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .toast {
-    background-color: #1f2933;  /* Heller als Page (#11191f) */
-    box-shadow: 0 0 0 1px rgb(255 255 255 / 0.08), 0 4px 6px -1px rgb(0 0 0 / 0.5);
-  }
-}
-
-:root[data-theme="dark"] .toast {
-  background-color: #1f2933;  /* Heller als Page (#11191f) */
-  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.08), 0 4px 6px -1px rgb(0 0 0 / 0.5);
-}
-
-.toast-success {
-  border-left-color: var(--color-success);
-}
-
-.toast-error {
-  border-left-color: var(--color-error);
-}
-
-.toast-warning {
-  border-left-color: var(--color-warning);
-}
-
-.toast-info {
-  border-left-color: var(--color-info);
-}
-
-/* Dark mode specific adjustments */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .btn-secondary {
-    background-color: #2d3748;
-    color: var(--text-primary);
-  }
-
-  :root:not([data-theme="light"]) .btn-secondary:hover {
-    background-color: #4a5568;
-  }
-}
-
-:root[data-theme="dark"] .btn-secondary {
-  background-color: #2d3748;
-  color: var(--text-primary);
-}
-
-:root[data-theme="dark"] .btn-secondary:hover {
-  background-color: #4a5568;
-}
+.toast-success { border-left-color: var(--color-success); }
+.toast-error { border-left-color: var(--color-error); }
+.toast-warning { border-left-color: var(--color-warning); }
+.toast-info { border-left-color: var(--color-primary-500); }

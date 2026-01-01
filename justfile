@@ -1,30 +1,42 @@
-# HAGG justfile
+# Justfile for HAGG development
 
-# Default recipe (list all recipes)
-default:
-    @just --list
+# Run with live reload (air)
+dev:
+    air
 
-# CSS Build (production, minified)
-css-build:
-    tailwindcss -i ./static/css/base.css -o ./static/css/styles.css --minify
-
-# CSS Watch (development, auto-rebuild)
-css-watch:
-    tailwindcss -i ./static/css/base.css -o ./static/css/styles.css --watch
-
-# Run the server
-run:
-    go run cmd/main.go
-
-# Build the binary
+# Build the project
 build:
     go build -o hagg cmd/main.go
+
+# Run without live reload
+run:
+    go run cmd/main.go serve
+
+# Run database migrations
+migrate-up:
+    goose -dir migrations sqlite db.sqlite3 up
+
+# Create a new migration
+migrate-create name:
+    goose -dir migrations create {{name}} sql
 
 # Run tests
 test:
     go test ./...
 
-# Clean generated files
+# Format code
+fmt:
+    go fmt ./...
+
+# Lint code
+lint:
+    golangci-lint run
+
+# Clean build artifacts
 clean:
-    rm -f hagg
-    rm -f static/css/styles.css
+    rm -f hagg hagg_test
+    rm -f db.sqlite3
+
+# Show this help
+help:
+    @just --list
