@@ -12,7 +12,7 @@
 
 **Freeze Point:** `v0.9.0` (12713e0) - Projekt-Stand vor Refactoring
 
-**Aktueller Stand:** 31.12.2024
+**Aktueller Stand:** 01.01.2026
 
 ### ✅ Abgeschlossen
 
@@ -25,29 +25,56 @@
   - Test-Seite: `/static/test-styles.html`
   - REFACTORING_PLAN.md aktualisiert (no npm/node)
 
+- **Dokumentation Update** (7365bc2)
+  - README.md komplett überarbeitet (neue HAGG-Stack Architektur)
+  - ARCHITECTURE.md komplett neu geschrieben (Chi, surreal.js, Patterns)
+  - Reise/Prozess als Kern des Projekts betont
+
+- **Phase 1, Point 1: Context-Wrapper + Event System + Toast** (b5da4ad)
+  - handler.Context mit Event-Storage
+  - handler.Wrapper für stdlib http.HandlerFunc
+  - hxevents komplett neu (events.go, context.go, commit.go, initial.go)
+  - toast package mit fluent API (ersetzt notie)
+  - Frontend: events.js + toast.js (surreal.js)
+  - Integration.md Dokumentation
+
+- **Phase 2 Setup: Chi Router Infrastructure** (ea9b385 + 0900875)
+  - Chi v5 + SCS v2 Dependencies installiert
+  - Session Manager (SQLite-backed, persistent)
+  - Chi-kompatible Middleware (Logger, Recovery, CORS, Auth)
+  - Chi Server Setup (internal/server/chi.go)
+  - Flash System für SCS (internal/shared/flash.go)
+  - Dual-Server-Modus: Gin :8080 + Chi :8081
+  - Alte Packages temporär kompatibel (für Gin-Routes während Migration)
+
 ### 🔄 In Arbeit
 
-- Nichts (Jahreswechsel-Pause)
+- **Phase 2: Route Migration** (in Planung)
+  - Nächster Schritt: routing.go analysieren und erste Route zu Chi migrieren
 
 ### 📅 Nächste Schritte
 
-1. **🚨 DRINGEND: Dokumentation aktualisieren**
-   - `README.md` komplett überarbeiten (neue Architektur dokumentieren)
-   - `ARCHITECTURE.md` aktualisieren (Chi, surreal + Alpine, neue Patterns)
-   - Alte Gin-Referenzen entfernen
-   - Neue Stack-Definition klären: HTMX · Alpine.js (state) · surreal.js (DOM) · Gomponents · Chi/Go
-   - **TODO:** Erwähnen, dass nicht nur der Output, sondern auch die Reise/der Prozess Kern des Projekts sind
-   - **Warum zuerst:** Verhindert Verwirrung bei Projekt-Besuchern!
+1. **Phase 2: Route Migration (Gin → Chi)**
+   - `routing.go` analysieren (bestehende Routes verstehen)
+   - Erste Route migrieren (empfohlen: `/auth/login`)
+   - Route-für-Route Strategie:
+     1. Static routes (keine Auth, keine Params)
+     2. Auth routes (Login/Logout)
+     3. Public routes (/, /about)
+     4. Protected routes (Dashboard, Profile)
+   - Jede Route auf :8081 testen vor next
+   - Handler anpassen (Gin API → stdlib: ctx.Param() → chi.URLParam())
 
-2. **Phase 1, Point 1: Context-Wrapper + hxevents Package**
-   - `hagg-lib/handler/context.go` erstellen (Option C: Fields + minimal helpers)
-   - `hagg-lib/handler/hxevents/` package für Initial-Events erstellen
-   - Tests schreiben
-   - Dokumentation
+2. **Phase 2: Port Swap + Cleanup**
+   - Wenn alle Routes migriert: Chi → :8080, Gin entfernen
+   - Gin dependencies aus go.mod entfernen
+   - Alte Packages löschen (middleware, view, notie in hagg-lib)
+   - Tests aktualisieren
 
-3. **Phase 1, Point 2: Chi Router Integration**
-   - Gin durch Chi v5 ersetzen
-   - Middleware-Stack anpassen
+3. **Phase 3: Handler Migration**
+   - Alle Handler komplett auf handler.Context migrieren
+   - Render helpers konsolidieren
+   - Tests vervollständigen
    - Routes refactoren
 
 4. **Phase 1, Point 4: Frontend JavaScript (surreal.js)**
