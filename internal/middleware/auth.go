@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/axelrhd/hagg-lib/handler"
+	"github.com/axelrhd/hagg/internal/auth"
 	"github.com/axelrhd/hagg/internal/session"
 )
 
@@ -20,9 +21,10 @@ func RequireAuth(wrapper *handler.Wrapper) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			sessionCtx := r.Context()
-			userID := session.Manager.GetInt(sessionCtx, "user_id")
+			rawUID := session.Manager.Get(sessionCtx, auth.SessionKeyUID)
+			uid, ok := rawUID.(string)
 
-			if userID == 0 {
+			if !ok || uid == "" {
 				// Not authenticated - redirect to login
 				http.Redirect(w, r, "/login", http.StatusSeeOther)
 				return
@@ -49,9 +51,10 @@ func RequireGuest(wrapper *handler.Wrapper) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			sessionCtx := r.Context()
-			userID := session.Manager.GetInt(sessionCtx, "user_id")
+			rawUID := session.Manager.Get(sessionCtx, auth.SessionKeyUID)
+			uid, ok := rawUID.(string)
 
-			if userID != 0 {
+			if ok && uid != "" {
 				// Already authenticated - redirect to home
 				http.Redirect(w, r, "/", http.StatusSeeOther)
 				return
