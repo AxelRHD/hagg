@@ -138,7 +138,7 @@ Authentication is intentionally simple:
 See:
 
 - `internal/auth/auth.go`
-- `internal/http/middleware/require_auth.go`
+- `internal/middleware/chi.go` (RequireAuth middleware)
 - `internal/frontend/pages/login/*`
 
 ---
@@ -193,7 +193,7 @@ and injects a `*casbin.Enforcer` into `app.Deps`.
 
 ### Middleware
 
-`internal/http/middleware/require_permission.go` provides:
+`internal/middleware/chi.go` provides:
 
 ```go
 middleware.RequirePermission(deps, "user:list")

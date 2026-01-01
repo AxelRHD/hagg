@@ -776,14 +776,8 @@ internal/
   session/
     store.go          # session store setup (cookie/sqlite/postgres/redis)
 
-  http/
-    middleware/
-      auth.go         # RequireAuth
-      permission.go   # RequirePermission
-      htmx.go         # HTMX triggers
-
-    render/
-      page.go         # DRY page renderer
+  middleware/
+    chi.go          # Chi-specific middleware (RequireAuth, RequirePermission, etc.)
 
   frontend/
     layout/

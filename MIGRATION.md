@@ -1,22 +1,24 @@
 # Migration Guide: hagg v0.9 → v1.0
 
-**Status:** 🚧 Work in Progress (wird während Refactoring erweitert)
+**Status:** ✅ Complete (for the hagg project itself)
 
-Dieser Guide dokumentiert alle Breaking Changes und hilft bei der Migration einer bestehenden hagg-basierten App auf die neue Architektur.
+This guide documents all breaking changes and helps migrate an existing hagg-based app to the new architecture.
+
+**Note:** The `hagg` boilerplate project itself has completed this migration. This document is for users who forked the old version and want to upgrade to the new Chi-based architecture.
 
 ---
 
-## 🎯 Übersicht
+## 🎯 Overview
 
-**Hauptänderungen:**
+**Main Changes:**
 - Gin → Chi (Router)
 - gin-sessions → SCS (Session Management)
 - gin.Context → handler.Context (Custom Context Wrapper)
 - notie → toast (Notification System)
-- hxevents komplett neu geschrieben (Event System)
+- hxevents completely rewritten (Event System)
 - Tailwind CSS v4 (CSS Framework)
 
-**Migration Strategy:** Dual-Server-Modus (Gin + Chi parallel), dann schrittweise Route-Migration
+**Migration Strategy:** Dual-server mode (Gin + Chi in parallel), then incremental route migration
 
 ---
 
@@ -24,7 +26,7 @@ Dieser Guide dokumentiert alle Breaking Changes und hilft bei der Migration eine
 
 ### 1. Router: Gin → Chi v5
 
-**Betrifft:** Alle Route-Definitionen, Middleware, Handler-Signaturen
+**Affects:** All route definitions, middleware, handler signatures
 
 #### Route Syntax
 
@@ -35,16 +37,16 @@ Dieser Guide dokumentiert alle Breaking Changes und hilft bei der Migration eine
 | `router.Group("/api")` | `r.Route("/api", func(r chi.Router) { ... })` |
 | `:param` | `{param}` |
 
-**Beispiel:**
+**Example:**
 
 ```go
-// ALT (Gin)
+// OLD (Gin)
 router := gin.New()
 auth := router.Group("/auth")
 auth.GET("/login", authHandler.LoginPage)
 auth.POST("/login", authHandler.Login)
 
-// NEU (Chi)
+// NEW (Chi)
 r := chi.NewRouter()
 r.Route("/auth", func(r chi.Router) {
     r.Get("/login", wrapper.Wrap(authHandler.LoginPage))
@@ -55,13 +57,13 @@ r.Route("/auth", func(r chi.Router) {
 #### URL Parameter Extraction
 
 ```go
-// ALT (Gin)
+// OLD (Gin)
 func Handler(ctx *gin.Context) {
     id := ctx.Param("id")
     query := ctx.Query("filter")
 }
 
-// NEU (Chi)
+// NEW (Chi)
 func Handler(ctx *handler.Context) error {
     id := chi.URLParam(ctx.Req, "id")
     query := ctx.Req.URL.Query().Get("filter")
@@ -73,20 +75,20 @@ func Handler(ctx *handler.Context) error {
 
 ### 2. Context: gin.Context → handler.Context
 
-**Betrifft:** Alle Handler, Middleware, Helper-Funktionen
+**Affects:** All handlers, middleware, helper functions
 
 #### Handler Signature
 
 ```go
-// ALT (Gin)
+// OLD (Gin)
 func MyHandler(ctx *gin.Context) {
     // ... code
 }
 
-// NEU (Chi + handler.Context)
+// NEW (Chi + handler.Context)
 func MyHandler(ctx *handler.Context) error {
     // ... code
-    return nil  // oder error
+    return nil  // or error
 }
 ```
 
@@ -96,57 +98,30 @@ func MyHandler(ctx *handler.Context) error {
 |-----|-----------------|
 | `ctx.Param("id")` | `chi.URLParam(ctx.Req, "id")` |
 | `ctx.Query("key")` | `ctx.Req.URL.Query().Get("key")` |
-| `ctx.PostForm("key")` | `ctx.Req.FormValue("key")` (nach `ctx.Req.ParseForm()`) |
+| `ctx.PostForm("key")` | `ctx.Req.FormValue("key")` (after `ctx.Req.ParseForm()`) |
 | `ctx.ShouldBindJSON(&data)` | `json.NewDecoder(ctx.Req.Body).Decode(&data)` |
 | `ctx.HTML(200, html)` | `ctx.Render(htmlNode)` |
 | `ctx.JSON(200, data)` | `json.NewEncoder(ctx.Res).Encode(data)` |
 | `ctx.Status(code)` | `ctx.Res.WriteHeader(code)` |
 
-**Beispiel:**
-
-```go
-// ALT (Gin)
-func Login(ctx *gin.Context) {
-    var req LoginRequest
-    if err := ctx.ShouldBindJSON(&req); err != nil {
-        ctx.JSON(400, gin.H{"error": err.Error()})
-        return
-    }
-    // ... login logic
-    ctx.JSON(200, gin.H{"success": true})
-}
-
-// NEU (handler.Context)
-func Login(ctx *handler.Context) error {
-    var req LoginRequest
-    if err := json.NewDecoder(ctx.Req.Body).Decode(&req); err != nil {
-        ctx.Res.WriteHeader(http.StatusBadRequest)
-        return json.NewEncoder(ctx.Res).Encode(map[string]string{"error": err.Error()})
-    }
-    // ... login logic
-    ctx.Res.WriteHeader(http.StatusOK)
-    return json.NewEncoder(ctx.Res).Encode(map[string]bool{"success": true})
-}
-```
-
 ---
 
 ### 3. Sessions: gin-sessions → SCS (alexedwards/scs/v2)
 
-**Betrifft:** Session-Zugriff, Flash Messages, Authentication
+**Affects:** Session access, flash messages, authentication
 
 #### Session Setup
 
 ```go
-// ALT (Gin)
+// OLD (Gin)
 store := cookie.NewStore([]byte(secret))
 router.Use(sessions.Sessions("session_name", store))
 
-// NEU (SCS)
+// NEW (SCS)
 session.Manager = scs.New()
 session.Manager.Lifetime = 24 * time.Hour
 session.Manager.Cookie.Name = "session_name"
-// ... (siehe internal/session/manager.go)
+// ... (see internal/session/manager.go)
 
 // In Chi Router:
 r.Use(session.Manager.LoadAndSave)
@@ -155,7 +130,7 @@ r.Use(session.Manager.LoadAndSave)
 #### Session API
 
 ```go
-// ALT (Gin)
+// OLD (Gin)
 func Handler(ctx *gin.Context) {
     session := sessions.Default(ctx)
     userID := session.Get("user_id")
@@ -163,95 +138,70 @@ func Handler(ctx *gin.Context) {
     session.Save()
 }
 
-// NEU (SCS)
+// NEW (SCS)
 func Handler(ctx *handler.Context) error {
     sessionCtx := ctx.Req.Context()
     userID := session.Manager.GetInt(sessionCtx, "user_id")
     session.Manager.Put(sessionCtx, "user_id", 123)
-    // Kein Save() nötig - automatisch beim Response
+    // No Save() needed - automatic on response
     return nil
 }
-```
-
-#### Flash Messages
-
-```go
-// ALT (Gin + gin-sessions)
-session := sessions.Default(ctx)
-session.AddFlash("Message", "success")
-session.Save()
-
-// NEU (SCS + shared/flash.go)
-shared.SetFlash(ctx, "success", "Message")
-// Abrufen:
-messages := shared.GetFlashMessages(ctx)
 ```
 
 ---
 
 ### 4. Notifications: notie → toast
 
-**Betrifft:** Alle Notification-Aufrufe
+**Affects:** All notification calls
 
 ```go
-// ALT (notie)
+// OLD (notie)
 notie.NewAlert("User created").Success().Notify(ctx)
 
-// NEU (toast)
+// NEW (toast)
 ctx.Toast("User created").Success().Notify()
 ```
 
 **Toast API:**
 - `.Success()`, `.Error()`, `.Warning()`, `.Info()`
-- `.Stay()` - persistente Notification
+- `.Stay()` - persistent notification
 - `.SetTimeout(ms)` - custom timeout
-- `.SetPosition(pos)` - Position ("bottom-right", "top-right", etc.)
-
-**Frontend:**
-- notie.js → toast.js (neue Implementation mit surreal.js)
-- Icons: SVG statt Font (siehe toast/icons.go)
+- `.SetPosition(pos)` - position ("bottom-right", "top-right", etc.)
 
 ---
 
-### 5. Events: hxevents (komplett neue API)
+### 5. Events: hxevents (completely new API)
 
-**Betrifft:** Alle Event-Emits (HTMX Triggers)
+**Affects:** All event emits (HTMX triggers)
 
 #### Event Emission
 
 ```go
-// ALT (hagg-lib/hxevents - alte Version)
-// ⚠️ Alte API ist inkompatibel mit neuer Version!
+// OLD (hagg-lib/hxevents - old version)
+// ⚠️ Old API is incompatible with new version!
 
-// NEU (Phase 1 hxevents)
-// Normale Events (für initial-events + HX-Trigger):
+// NEW (Phase 1 hxevents)
+// Normal events (for initial-events + HX-Trigger):
 ctx.Event("event-name", payload)
 
-// Events mit Phase (nur HX-Trigger):
+// Events with phase (HX-Trigger only):
 hxevents.Add(ctx, hxevents.Immediate, "event-name", payload)
 hxevents.Add(ctx, hxevents.AfterSwap, "event-name", payload)
 hxevents.Add(ctx, hxevents.AfterSettle, "event-name", payload)
 ```
 
-**Wichtig:** Events werden automatisch committed via `handler.Wrapper` - **kein manueller Commit** nötig!
-
-#### Frontend Event Processing
-
-**NEU:** Einheitliches Event-System:
-- `initial-events` Script (für full-page loads)
-- HX-Trigger Headers (für HTMX requests)
-- Beide triggern die gleichen Event-Handler (siehe `static/js/events.js`)
+**Important:** Events are automatically committed via `handler.Wrapper` - **no manual commit** needed!
 
 ---
 
 ### 6. Middleware
 
-**Betrifft:** Custom Middleware, Auth Guards
+**Affects:** Custom middleware, auth guards
 
 #### Middleware Signature
 
 ```go
-// ALT (Gin)
+// OLD (Gin)
 func MyMiddleware() gin.HandlerFunc {
     return func(ctx *gin.Context) {
         // ... logic
@@ -259,7 +209,7 @@ func MyMiddleware() gin.HandlerFunc {
     }
 }
 
-// NEU (Chi)
+// NEW (Chi)
 func MyMiddleware(wrapper *handler.Wrapper) func(http.Handler) http.Handler {
     return func(next http.Handler) http.Handler {
         return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -270,62 +220,30 @@ func MyMiddleware(wrapper *handler.Wrapper) func(http.Handler) http.Handler {
 }
 ```
 
-#### Auth Middleware
-
-```go
-// ALT (Gin)
-func RequireAuth() gin.HandlerFunc {
-    return func(ctx *gin.Context) {
-        session := sessions.Default(ctx)
-        if session.Get("user_id") == nil {
-            ctx.Redirect(302, "/login")
-            ctx.Abort()
-            return
-        }
-        ctx.Next()
-    }
-}
-
-// NEU (Chi - siehe internal/middleware/auth.go)
-func RequireAuth(wrapper *handler.Wrapper) func(http.Handler) http.Handler {
-    return func(next http.Handler) http.Handler {
-        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-            sessionCtx := r.Context()
-            userID := session.Manager.GetInt(sessionCtx, "user_id")
-            if userID == 0 {
-                http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
-                return
-            }
-            next.ServeHTTP(w, r)
-        })
-    }
-}
-```
-
 ---
 
 ### 7. Rendering: view.Render → handler.Context.Render
 
-**Betrifft:** Alle Template/Gomponents Renders
+**Affects:** All template/gomponents renders
 
 ```go
-// ALT (hagg-lib/view)
+// OLD (hagg-lib/view)
 view.Render(ctx, myPage())
 
-// NEU (handler.Context)
+// NEW (handler.Context)
 return ctx.Render(myPage())
 ```
 
-**Automatische Features:**
-- Event commitment (HX-Trigger Headers)
+**Automatic features:**
+- Event commitment (HX-Trigger headers)
 - Error handling
-- Content-Type Header
+- Content-Type header
 
 ---
 
 ## 🔧 Dependencies
 
-### Zu installieren:
+### To Install:
 
 ```bash
 go get github.com/go-chi/chi/v5
@@ -333,165 +251,165 @@ go get github.com/alexedwards/scs/v2
 go get github.com/alexedwards/scs/sqlite3store
 ```
 
-### Zu entfernen (nach Migration):
+### To Remove (after migration):
 
 ```bash
-# In go.mod entfernen:
+# Remove from go.mod:
 github.com/gin-gonic/gin
 github.com/gin-contrib/sessions
 ```
 
 ---
 
-## 📝 Migration Checklist (für echte App)
+## 📝 Migration Checklist (for existing apps)
 
-### Phase 0: Vorbereitung
+### Phase 0: Preparation
 
-- [ ] **Backup erstellen** (Code + Datenbank)
-- [ ] **Dependencies auditieren:** Welche hagg-lib Features nutzt die App?
-- [ ] **Route Inventory:** Liste aller Routes erstellen
-- [ ] **Custom Code identifizieren:** Middleware, Helper, Extensions
-- [ ] **Tests dokumentieren:** Welche Features müssen nach Migration funktionieren?
+- [ ] **Create backup** (code + database)
+- [ ] **Audit dependencies:** Which hagg-lib features does the app use?
+- [ ] **Route inventory:** List all routes
+- [ ] **Identify custom code:** Middleware, helpers, extensions
+- [ ] **Document tests:** Which features must work after migration?
 
-### Phase 1: Setup (Dual-Server-Modus)
+### Phase 1: Setup (Dual-Server Mode)
 
-- [ ] **hagg-lib aktualisieren** (neue Version mit handler, toast, hxevents)
-- [ ] **Dependencies installieren** (Chi, SCS)
-- [ ] **Config erweitern:**
-  - `SESSION_DB_PATH` hinzufügen
-  - Gin-Config beibehalten (parallel)
-- [ ] **Session Manager initialisieren** (`internal/session/manager.go` kopieren)
-- [ ] **Chi Server erstellen** (`internal/server/chi.go` kopieren)
-- [ ] **Middleware migrieren** (`internal/middleware/chi.go` + `auth.go`)
-- [ ] **Flash System anpassen** (`internal/shared/flash.go`)
-- [ ] **server.go aktualisieren:** Dual-Server-Modus aktivieren
-  - Gin auf :8080 (bestehend)
-  - Chi auf :8081 (neu)
-- [ ] **Kompilieren testen:** Projekt muss bauen
-- [ ] **Beide Server starten:** Gin + Chi laufen parallel
+- [ ] **Update hagg-lib** (new version with handler, toast, hxevents)
+- [ ] **Install dependencies** (Chi, SCS)
+- [ ] **Extend config:**
+  - Add `SESSION_DB_PATH`
+  - Keep Gin config (parallel)
+- [ ] **Initialize session manager** (copy `internal/session/manager.go`)
+- [ ] **Create Chi server** (copy `internal/server/chi.go`)
+- [ ] **Migrate middleware** (`internal/middleware/chi.go` + `auth.go`)
+- [ ] **Adapt flash system** (`internal/shared/flash.go`)
+- [ ] **Update server.go:** Enable dual-server mode
+  - Gin on :8080 (existing)
+  - Chi on :8081 (new)
+- [ ] **Test compilation:** Project must build
+- [ ] **Start both servers:** Gin + Chi run in parallel
 
-### Phase 2: Route Migration (schrittweise)
+### Phase 2: Route Migration (incremental)
 
-**Strategie:** Eine Route nach der anderen
+**Strategy:** One route at a time
 
-- [ ] **routing.go analysieren:** Alle Routes dokumentieren
-- [ ] **Test-Route migrieren:** Einfache Route ohne Auth/Params
-- [ ] **Auth Routes:** Login, Logout migrieren
-- [ ] **Public Routes:** Startseite, About, etc.
-- [ ] **Protected Routes:** Dashboard, Profile, etc.
-- [ ] **API Routes:** REST Endpoints (falls vorhanden)
+- [ ] **Analyze routing.go:** Document all routes
+- [ ] **Migrate test route:** Simple route without auth/params
+- [ ] **Auth routes:** Login, logout migration
+- [ ] **Public routes:** Homepage, about, etc.
+- [ ] **Protected routes:** Dashboard, profile, etc.
+- [ ] **API routes:** REST endpoints (if any)
 
-**Pro Route:**
-1. Chi-Route definieren (`r.Get()`, `r.Post()`, etc.)
-2. Handler anpassen:
+**Per route:**
+1. Define Chi route (`r.Get()`, `r.Post()`, etc.)
+2. Adapt handler:
    - Signature: `func(*handler.Context) error`
    - ctx.Param() → chi.URLParam()
-   - Session API anpassen
-   - Events anpassen
-   - Render anpassen
-3. Auf :8081 testen (Chi)
-4. Regression-Check auf :8080 (Gin)
+   - Adapt session API
+   - Adapt events
+   - Adapt rendering
+3. Test on :8081 (Chi)
+4. Regression check on :8080 (Gin)
 5. Commit
 
 ### Phase 3: Port Swap
 
-- [ ] **Alle Routes migriert?** Checklist durchgehen
-- [ ] **Finale Tests:** Alle Features auf :8081 testen
-- [ ] **server.go anpassen:** Chi → :8080, Gin entfernen
-- [ ] **Smoke Test:** App auf :8080 testen
-- [ ] **Monitoring:** Errors, Performance prüfen
+- [ ] **All routes migrated?** Review checklist
+- [ ] **Final tests:** Test all features on :8081
+- [ ] **Adapt server.go:** Chi → :8080, remove Gin
+- [ ] **Smoke test:** Test app on :8080
+- [ ] **Monitoring:** Check errors, performance
 
 ### Phase 4: Cleanup
 
-- [ ] **Gin entfernen:**
-  - Dependencies aus `go.mod`
-  - Gin-Server Code löschen
-  - Alte Middleware entfernen
-- [ ] **Alte hagg-lib Packages löschen:**
+- [ ] **Remove Gin:**
+  - Dependencies from `go.mod`
+  - Gin server code
+  - Old middleware
+- [ ] **Delete old hagg-lib packages:**
   - `hagg-lib/middleware/hxtriggers.go`
   - `hagg-lib/view/render.go`
   - `hagg-lib/notie/`
-- [ ] **Tests aktualisieren:**
-  - Test-Helpers für Chi
-  - Integration Tests
-- [ ] **Dokumentation aktualisieren:**
+- [ ] **Update tests:**
+  - Test helpers for Chi
+  - Integration tests
+- [ ] **Update documentation:**
   - README.md
-  - API Docs (falls vorhanden)
-- [ ] **go mod tidy:** Dependencies aufräumen
+  - API docs (if any)
+- [ ] **go mod tidy:** Clean up dependencies
 
-### Phase 5: Verifikation
+### Phase 5: Verification
 
-- [ ] **Alle Features testen:** Manuelle Smoke-Tests
-- [ ] **Tests laufen:** `go test ./...`
-- [ ] **Deployment Test:** Staging-Umgebung testen
-- [ ] **Performance Check:** Keine Regression
-- [ ] **Production Deployment**
+- [ ] **Test all features:** Manual smoke tests
+- [ ] **Tests pass:** `go test ./...`
+- [ ] **Deployment test:** Test staging environment
+- [ ] **Performance check:** No regression
+- [ ] **Production deployment**
 
 ---
 
-## ⚠️ Häufige Probleme & Lösungen
+## ⚠️ Common Problems & Solutions
 
-### Problem: Session geht nach Migration verloren
+### Problem: Session lost after migration
 
-**Ursache:** SCS nutzt andere Cookie-Namen/Storage als gin-sessions
+**Cause:** SCS uses different cookie names/storage than gin-sessions
 
-**Lösung:**
+**Solution:**
 ```go
 // In session/manager.go:
-Manager.Cookie.Name = "my_old_cookie_name"  // Gleicher Name wie vorher
+Manager.Cookie.Name = "my_old_cookie_name"  // Same name as before
 ```
 
-Oder: Nutzer müssen sich neu einloggen (Session-Reset)
+Or: Users must log in again (session reset)
 
-### Problem: Flash Messages verschwinden nicht
+### Problem: Flash messages don't disappear
 
-**Ursache:** SCS `PopString()` funktioniert anders als gin-sessions Flash
+**Cause:** SCS `PopString()` works differently than gin-sessions Flash
 
-**Lösung:** Sicherstellen, dass `PopString()` (nicht `GetString()`) verwendet wird:
+**Solution:** Ensure `PopString()` (not `GetString()`) is used:
 ```go
-// RICHTIG:
+// CORRECT:
 msg := session.Manager.PopString(ctx, "flash_success")
 
-// FALSCH:
-msg := session.Manager.GetString(ctx, "flash_success")  // Bleibt erhalten!
+// WRONG:
+msg := session.Manager.GetString(ctx, "flash_success")  // Persists!
 ```
 
-### Problem: URL Parameter sind leer
+### Problem: URL parameters are empty
 
-**Ursache:** Chi nutzt `{param}` statt `:param`
+**Cause:** Chi uses `{param}` instead of `:param`
 
-**Lösung:**
+**Solution:**
 ```go
-// Route Definition:
-r.Get("/users/{id}", ...)  // NICHT :id
+// Route definition:
+r.Get("/users/{id}", ...)  // NOT :id
 
 // Handler:
-id := chi.URLParam(ctx.Req, "id")  // NICHT ctx.Param("id")
+id := chi.URLParam(ctx.Req, "id")  // NOT ctx.Param("id")
 ```
 
-### Problem: Middleware-Reihenfolge
+### Problem: Middleware order
 
-**Ursache:** SCS middleware MUSS vor allen anderen Middlewares kommen, die Sessions nutzen
+**Cause:** SCS middleware MUST come before all other middleware that use sessions
 
-**Lösung:**
+**Solution:**
 ```go
-r.Use(session.Manager.LoadAndSave)  // ZUERST!
+r.Use(session.Manager.LoadAndSave)  // FIRST!
 r.Use(middleware.Recovery(wrapper))
 r.Use(middleware.Logger(wrapper))
 // ... rest
 ```
 
-### Problem: Events werden nicht committed
+### Problem: Events not committed
 
-**Ursache:** `handler.Wrapper` committed Events automatisch - manueller Commit überschreibt
+**Cause:** `handler.Wrapper` commits events automatically - manual commit overwrites
 
-**Lösung:** **Kein** manueller `hxevents.Commit()` Aufruf nötig! Der Wrapper macht das automatisch.
+**Solution:** **No** manual `hxevents.Commit()` call needed! The wrapper does it automatically.
 
-### Problem: Form Parsing schlägt fehl
+### Problem: Form parsing fails
 
-**Ursache:** stdlib erfordert expliziten `ParseForm()` Aufruf
+**Cause:** stdlib requires explicit `ParseForm()` call
 
-**Lösung:**
+**Solution:**
 ```go
 if err := ctx.Req.ParseForm(); err != nil {
     return err
@@ -501,36 +419,35 @@ email := ctx.Req.FormValue("email")
 
 ---
 
-## 📚 Zusätzliche Ressourcen
+## 📚 Additional Resources
 
-### Dokumentation:
+### Documentation:
 
 - **Chi Router:** https://github.com/go-chi/chi
 - **SCS Sessions:** https://github.com/alexedwards/scs
-- **handler.Context:** Siehe `hagg-lib/handler/context.go`
-- **Toast System:** Siehe `hagg-lib/toast/toast.go`
-- **Event System:** Siehe `hagg-lib/hxevents/`
+- **handler.Context:** See `hagg-lib/handler/context.go`
+- **Toast System:** See `hagg-lib/toast/toast.go`
+- **Event System:** See `hagg-lib/hxevents/`
 
-### Beispiel-Code:
+### Example Code:
 
-- **Refactored Boilerplate:** Dieses Projekt (`hagg/`)
+- **Refactored Boilerplate:** This project (`hagg/`)
 - **Integration Examples:** `hagg-lib/INTEGRATION.md`
 
 ### Support:
 
-- Bei Fragen: GitHub Issues oder Diskussionen im Projekt
+- For questions: GitHub issues or discussions in the project
 
 ---
 
-## 🔄 Änderungshistorie
+## 🔄 Change History
 
-**01.01.2026:** Initial version (während Phase 2 Refactoring)
-- Breaking Changes dokumentiert (Gin→Chi, Sessions, Events, etc.)
-- Migration Checklist erstellt
-- Häufige Probleme gesammelt
-
-*Dieses Dokument wird während des Refactorings erweitert.*
+**2026-01-01:** Initial version (during Phase 2 refactoring)
+- Breaking changes documented (Gin→Chi, Sessions, Events, etc.)
+- Migration checklist created
+- Common problems collected
+- Translated to English
 
 ---
 
-**🎯 Nächster Schritt:** Route Migration (Phase 2)
+**🎯 Status:** Migration complete for the hagg project itself. This guide is for users migrating their own forks.
