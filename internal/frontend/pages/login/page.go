@@ -26,7 +26,7 @@ func Page(ctx *handler.Context, deps app.Deps) error {
 
 	content := Div(
 		// HTMX auto-refresh on auth-changed event
-		hx.Post(view.URLStringChi(ctx.Req, "/")),
+		hx.Post(view.URLStringChi(ctx.Req, "/login")),
 		hx.Trigger("auth-changed from:body"),
 		hx.Target("#page"),
 		hx.Select("#page"),

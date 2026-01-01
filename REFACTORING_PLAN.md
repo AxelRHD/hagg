@@ -58,21 +58,21 @@
   - ~500 lines of code duplication eliminated
   - Flash system consolidated (SCS-based only)
 
+- **Phase 3 Complete: Boilerplate Pages** (2026-01-01)
+  - Homepage at / (HAGG stack presentation)
+  - Login moved from / to /login
+  - Protected dashboard at /dashboard
+  - Navigation with auth-based visibility
+  - Auth middleware integrated (RequireAuth)
+  - Three complete page examples (public, auth, protected)
+
 ### 🔄 In Progress
 
-- **Phase 3: Handler Migration** (next steps)
-  - Add more routes as needed
-  - Refine handler patterns
+- **None currently**
 
 ### 📅 Next Steps
 
-1. **Phase 3: Handler Migration**
-   - Migrate all handlers to handler.Context
-   - Consolidate render helpers
-   - Complete tests
-   - Refactor routes
-
-2. **Phase 1, Point 4: Frontend JavaScript (surreal.js)**
+1. **Phase 1, Point 4: Frontend JavaScript (surreal.js)**
    - Include surreal.js (in addition to Alpine.js)
    - Implement HTMX event handling
    - Toast rendering via surreal

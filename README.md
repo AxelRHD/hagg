@@ -111,6 +111,31 @@ air
 
 ---
 
+## What's Included
+
+The `hagg` boilerplate includes example pages demonstrating key patterns:
+
+### Pages
+
+- **Homepage (`/`)** — Public landing page with HAGG stack overview
+- **Login (`/login`)** — UID-based authentication with session management
+- **Dashboard (`/dashboard`)** — Protected page (requires authentication)
+
+### Features Demonstrated
+
+- **Session-based authentication** with SCS (persistent SQLite storage)
+- **Protected routes** using Chi middleware (`middleware.RequireAuth`)
+- **Conditional navigation** (shows/hides links based on auth status)
+- **HTMX interactions** (form submissions, auto-refresh on auth-changed events)
+- **Server-to-client events** (toast notifications via HX-Trigger headers)
+- **Dark mode toggle** with Alpine.js state persistence
+- **Type-safe HTML** rendering with gomponents
+- **Responsive design** with Tailwind CSS + Pico-inspired semantic styles
+
+All pages use server-side rendering — no JavaScript build step required.
+
+---
+
 ## Configuration
 
 Configuration is loaded from environment variables (and an optional `.env`).

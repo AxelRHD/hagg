@@ -19,7 +19,7 @@ import (
 //  2. SCS Session middleware (MUST come first before any middleware that uses sessions)
 //  3. Custom middleware (Recovery, Logger, CORS, RateLimit, Secure)
 //
-// Routes are added via AddLoginRoutes.
+// Routes are added via AddRoutes.
 //
 // Example:
 //
@@ -47,8 +47,8 @@ func NewChiServer(wrapper *handler.Wrapper, deps app.Deps) http.Handler {
 	fs := http.FileServer(http.Dir("./static"))
 	r.Handle("/static/*", http.StripPrefix("/static/", fs))
 
-	// Add login routes
-	AddLoginRoutes(r, wrapper, deps)
+	// Add application routes
+	AddRoutes(r, wrapper, deps)
 
 	return r
 }

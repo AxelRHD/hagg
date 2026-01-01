@@ -11,6 +11,8 @@ import (
 )
 
 func Navbar(ctx *handler.Context, deps app.Deps, oob bool) g.Node {
+	isAuthenticated := deps.Auth.IsAuthenticated(ctx.Req)
+
 	return Nav(
 		ID("navbar"),
 		g.If(oob,
@@ -19,9 +21,12 @@ func Navbar(ctx *handler.Context, deps app.Deps, oob bool) g.Node {
 
 		Ul(
 			Li(
-				Strong(
-					Style("font-family: 'Courier Next', Courier, monospace; font-size: 2rem; text-transform: uppercase; letter-spacing: 0em"),
-					g.Text("KL - Werkzeugkasten"),
+				A(
+					Href(view.URLStringChi(ctx.Req, "/")),
+					Strong(
+						Style("font-family: 'Courier Next', Courier, monospace; font-size: 1.5rem; text-transform: uppercase; letter-spacing: 0em"),
+						g.Text("HAGG"),
+					),
 				),
 			),
 		),
@@ -33,26 +38,39 @@ func Navbar(ctx *handler.Context, deps app.Deps, oob bool) g.Node {
 					g.Text("Home"),
 				),
 			),
-			g.If(deps.Auth.IsAuthenticated(ctx.Req),
+
+			// Show Login link if not authenticated
+			g.If(!isAuthenticated,
 				Li(
 					A(
-						Href("#"),
-						g.Text("Products"),
+						Href(view.URLStringChi(ctx.Req, "/login")),
+						g.Text("Login"),
 					),
 				),
 			),
-			g.If(deps.Auth.IsAuthenticated(ctx.Req),
+
+			// Show Dashboard link if authenticated
+			g.If(isAuthenticated,
+				Li(
+					A(
+						Href(view.URLStringChi(ctx.Req, "/dashboard")),
+						g.Text("Dashboard"),
+					),
+				),
+			),
+
+			// Show Logout button if authenticated
+			g.If(isAuthenticated,
 				Li(
 					Button(
 						x.Bind("class", "theme === 'dark' ? 'contrast' : 'secondary'"),
-
-						x.On("click.prevent", "console.log('Logout clicked')"),
 						hx.Post(view.URLStringChi(ctx.Req, "/htmx/logout")),
-
 						g.Text("Logout"),
 					),
 				),
 			),
+
+			// Theme toggle (always visible)
 			Li(
 				Button(
 					Class("theme-toggle"),

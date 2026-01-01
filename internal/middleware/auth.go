@@ -24,7 +24,7 @@ func RequireAuth(wrapper *handler.Wrapper) func(http.Handler) http.Handler {
 
 			if userID == 0 {
 				// Not authenticated - redirect to login
-				http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
+				http.Redirect(w, r, "/login", http.StatusSeeOther)
 				return
 			}
 
