@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/axelrhd/hagg-lib/flash"
-	"github.com/axelrhd/hagg-lib/hxevents"
 	"github.com/axelrhd/hagg-lib/notie"
 	"github.com/axelrhd/hagg-lib/view"
 	"github.com/axelrhd/hagg/internal/app"
@@ -38,7 +37,8 @@ func HxLogin(deps app.Deps) gin.HandlerFunc {
 
 		// hxevents.Add(ctx, hxevents.Immediate, "update-nav", true)
 		notie.NewAlert("Login erfolgreich.").Success().Notify(ctx)
-		hxevents.Add(ctx, hxevents.Immediate, "auth-changed", true)
+		// TODO: Re-enable after migration to Chi/handler.Context
+		// hxevents.Add(ctx, hxevents.Immediate, "auth-changed", true)
 
 		ctx.Status(http.StatusNoContent)
 	}

@@ -32,3 +32,4 @@ casbin*
 *.sqlite*
 config.yml
 slogx.yml
+/main
