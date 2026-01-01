@@ -41,7 +41,7 @@ type SessionConfig struct {
 	Secret     string        `envconfig:"SECRET" required:"true"`
 	MaxAge     time.Duration `envconfig:"MAX_AGE" default:"720h"` // 30 Tage
 	CookieName string        `envconfig:"COOKIE_NAME" default:"my_hagg_app"`
-	DBPath     string        `envconfig:"DB_PATH" default:"./data/sessions.db"` // SCS session storage
+	DBPath     string        `envconfig:"DB_PATH" default:"./db.sqlite3"` // SCS session storage (shared with app DB)
 }
 
 // ------------------------------------------------------------

@@ -24,16 +24,20 @@ var Manager *scs.SessionManager
 //   - HttpOnly cookies (prevents XSS attacks)
 //   - SameSite=Lax (CSRF protection)
 //   - SQLite backend for persistence across restarts
+//   - Shared database with app (default: ./db.sqlite3)
 //
 // Example:
 //
-//	if err := session.Init("./data/sessions.db"); err != nil {
+//	if err := session.Init("./db.sqlite3"); err != nil {
 //	    log.Fatal("failed to init sessions", "error", err)
 //	}
 func Init(dbPath string) error {
-	// Ensure directory exists
-	if err := os.MkdirAll(filepath.Dir(dbPath), 0755); err != nil {
-		return err
+	// Ensure directory exists (if DB is in subdirectory)
+	dir := filepath.Dir(dbPath)
+	if dir != "." && dir != "/" {
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return err
+		}
 	}
 
 	// Open SQLite database for session storage
