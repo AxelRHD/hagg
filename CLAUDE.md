@@ -175,6 +175,11 @@ msg := session.Manager.PopString(ctx.Req.Context(), "flash_success")
 
 ### Toast Notification System
 
+> ⚠️ **WICHTIG: Architektur-Entscheidung**
+>
+> Der HTMX Toast-Listener **MUSS auf dem `<body>`-Element** sitzen, nicht auf einzelnen Formularen!
+> Siehe Abschnitt unten für Details.
+
 **Backend (hagg-lib/toast):**
 ```go
 // Fluent API for creating toasts
@@ -183,11 +188,56 @@ ctx.Toast("Error occurred").Error().Stay().Notify()
 ctx.Toast("Warning").Warning().SetTimeout(3000).Notify()
 ```
 
-**Frontend (static/js):**
-- Toast events processed via unified event system
-- Rendered with Tailwind CSS classes
-- SVG icons for different levels
-- Auto-dismiss or persistent (`.Stay()`)
+**Frontend - Zwei Delivery-Mechanismen:**
+
+1. **HTMX-Requests** → `HX-Trigger` Header mit `toast` Event
+2. **Full-Page-Loads** → `RenderEvents()` erzeugt selbst-zerstörende `<script>`-Tags
+
+**Toast-Listener-Architektur (KRITISCH!):**
+
+Der Toast-Listener wird **einmal global auf dem `<body>`** registriert in `skeleton.go`:
+
+```go
+Body(
+    // Global HTMX toast listener - catches toast events from ANY HTMX request
+    // IMPORTANT: Must be on <body>, not on individual forms!
+    hx.On("toast", "showToast(event.detail)"),
+
+    grp,
+)
+```
+
+**WARUM auf `<body>` und nicht auf einzelnen Forms?**
+
+1. **HTMX bubblet nicht** - Events triggern nur auf dem Element, das den Request gemacht hat
+2. **Ein Listener reicht** - Der `<body>` wird nie per HTMX geswappt
+3. **Keine Duplikate** - Mehrere Listener = mehrere Toasts pro Event
+4. **Zukunftssicher** - Neue Forms brauchen keinen eigenen Listener
+
+**FALSCH** (führt zu fehlenden oder doppelten Toasts):
+```go
+// ❌ NICHT SO - Listener auf jedem Form
+Form(
+    hx.Post("/htmx/login"),
+    hx.On("toast", "showToast(event.detail)"),  // NEIN!
+    ...
+)
+```
+
+**RICHTIG:**
+```go
+// ✅ SO - Ein Listener auf <body> in skeleton.go
+Body(
+    hx.On("toast", "showToast(event.detail)"),
+    grp,
+)
+```
+
+**Frontend (static/js/toast.js):**
+- `showToast({ message, level, timeout, position })` - Zeigt Toast an
+- SVG-Icons für success, error, warning, info
+- Auto-dismiss nach Timeout (default: 5000ms)
+- Fade-in/out Animation
 
 ### CSS & Styling
 

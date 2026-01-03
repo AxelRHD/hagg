@@ -12,7 +12,7 @@ import (
 // Usage:
 //
 //	loginURL := view.URLString(ctx, "/htmx/login")  // Gin
-//	loginURL := view.URLStringChi(req, "/htmx/login")  // Chi
+//	loginURL := view.URLString(req, "/htmx/login")  // Chi
 //	LoginForm(loginURL)
 func LoginForm(loginURL string) g.Node {
 	return Article(
@@ -25,9 +25,6 @@ func LoginForm(loginURL string) g.Node {
 
 		Form(
 			hx.Post(loginURL),
-
-			// Listen for toast event dispatched by HTMX from HX-Trigger header
-			hx.On("toast", "showToast(event.detail)"),
 
 			Input(
 				Type("text"),
@@ -52,7 +49,7 @@ func LoginForm(loginURL string) g.Node {
 // Usage:
 //
 //	logoutURL := view.URLString(ctx, "/htmx/logout")  // Gin
-//	logoutURL := view.URLStringChi(req, "/htmx/logout")  // Chi
+//	logoutURL := view.URLString(req, "/htmx/logout")  // Chi
 //	LogoutButton(logoutURL, user.FullName())
 func LogoutButton(logoutURL, username string) g.Node {
 	return Article(

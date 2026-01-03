@@ -15,8 +15,8 @@ import (
 func Page(ctx *handler.Context, deps app.Deps) error {
 	user, _ := deps.Auth.CurrentUser(ctx.Req)
 
-	loginURL := view.URLStringChi(ctx.Req, "/htmx/login")
-	logoutURL := view.URLStringChi(ctx.Req, "/htmx/logout")
+	loginURL := view.URLString(ctx.Req, "/htmx/login")
+	logoutURL := view.URLString(ctx.Req, "/htmx/logout")
 
 	// Extract username safely
 	username := ""
@@ -26,7 +26,7 @@ func Page(ctx *handler.Context, deps app.Deps) error {
 
 	content := Div(
 		// HTMX auto-refresh on auth-changed event
-		hx.Post(view.URLStringChi(ctx.Req, "/login")),
+		hx.Post(view.URLString(ctx.Req, "/login")),
 		hx.Trigger("auth-changed from:body"),
 		hx.Target("#page"),
 		hx.Select("#page"),

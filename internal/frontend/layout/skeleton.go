@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	g "maragu.dev/gomponents"
+	hx "maragu.dev/gomponents-htmx"
 	. "maragu.dev/gomponents/html"
 )
 
@@ -79,6 +80,11 @@ func Skeleton(req *http.Request, content ...g.Node) g.Node {
 				// Alpine.js state for theme toggle - must be on body tag
 				g.Attr("x-data", "{ theme: $persist('') }"),
 				g.Attr("x-effect", "theme !== '' && document.documentElement.setAttribute('data-theme', theme)"),
+
+				// Global HTMX toast listener - catches toast events from ANY HTMX request
+				// IMPORTANT: Must be on <body>, not on individual forms!
+				// See CLAUDE.md "Toast System" for details.
+				hx.On("toast", "showToast(event.detail)"),
 
 				grp,
 				// Toasts are rendered as self-destructing elements by RenderEvents()

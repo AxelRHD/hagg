@@ -22,7 +22,7 @@ func Navbar(ctx *handler.Context, deps app.Deps, oob bool) g.Node {
 		Ul(
 			Li(
 				A(
-					Href(view.URLStringChi(ctx.Req, "/")),
+					Href(view.URLString(ctx.Req, "/")),
 					Strong(
 						Style("font-family: 'Courier Next', Courier, monospace; font-size: 1.5rem; text-transform: uppercase; letter-spacing: 0em"),
 						g.Text("HAGG"),
@@ -34,7 +34,7 @@ func Navbar(ctx *handler.Context, deps app.Deps, oob bool) g.Node {
 		Ul(
 			Li(
 				A(
-					Href(view.URLStringChi(ctx.Req, "/")),
+					Href(view.URLString(ctx.Req, "/")),
 					g.Text("Home"),
 				),
 			),
@@ -43,7 +43,7 @@ func Navbar(ctx *handler.Context, deps app.Deps, oob bool) g.Node {
 			g.If(!isAuthenticated,
 				Li(
 					A(
-						Href(view.URLStringChi(ctx.Req, "/login")),
+						Href(view.URLString(ctx.Req, "/login")),
 						g.Text("Login"),
 					),
 				),
@@ -53,7 +53,7 @@ func Navbar(ctx *handler.Context, deps app.Deps, oob bool) g.Node {
 			g.If(isAuthenticated,
 				Li(
 					A(
-						Href(view.URLStringChi(ctx.Req, "/dashboard")),
+						Href(view.URLString(ctx.Req, "/dashboard")),
 						g.Text("Dashboard"),
 					),
 				),
@@ -64,7 +64,7 @@ func Navbar(ctx *handler.Context, deps app.Deps, oob bool) g.Node {
 				Li(
 					Button(
 						x.Bind("class", "theme === 'dark' ? 'contrast' : 'secondary'"),
-						hx.Post(view.URLStringChi(ctx.Req, "/htmx/logout")),
+						hx.Post(view.URLString(ctx.Req, "/htmx/logout")),
 						g.Text("Logout"),
 					),
 				),
