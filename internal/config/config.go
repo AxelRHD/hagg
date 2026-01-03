@@ -18,7 +18,7 @@ type Config struct {
 }
 
 // ------------------------------------------------------------
-// Server / Gin
+// Server
 // ------------------------------------------------------------
 
 type ServerConfig struct {
@@ -27,7 +27,7 @@ type ServerConfig struct {
 	BasePath string `envconfig:"BASE_PATH" default:"/"`
 
 	// Wenn gesetzt → Unix-Socket ($XDG_RUNTIME_DIR/<Socket>)
-	Socket string `envconfig:"SERVER_SOCKET"`
+	Socket string `envconfig:"SOCKET"`
 
 	// true = Development Mode, false = Release Mode (Default)
 	Dev bool `envconfig:"DEV" default:"false"`
@@ -79,7 +79,7 @@ func Load() (*Config, error) {
 	_ = godotenv.Load()
 
 	var server ServerConfig
-	if err := envconfig.Process("GIN", &server); err != nil {
+	if err := envconfig.Process("SERVER", &server); err != nil {
 		return nil, fmt.Errorf("load server config: %w", err)
 	}
 
@@ -131,12 +131,12 @@ func MustLoad() *Config {
 func (c *Config) validate() error {
 	if c.Server.Socket == "" {
 		if c.Server.Port <= 0 || c.Server.Port > 65535 {
-			return fmt.Errorf("invalid GIN_PORT: %d", c.Server.Port)
+			return fmt.Errorf("invalid SERVER_PORT: %d", c.Server.Port)
 		}
 	}
 
 	if c.Server.BasePath == "" {
-		return fmt.Errorf("GIN_BASE_PATH must not be empty")
+		return fmt.Errorf("SERVER_BASE_PATH must not be empty")
 	}
 
 	if c.Database.SQLite.Path == "" {
@@ -184,7 +184,7 @@ func (c Config) Print() {
 }
 
 func printServer(s ServerConfig) {
-	fmt.Println("├─ Server (GIN)")
+	fmt.Println("├─ Server")
 
 	mode := "release"
 	if s.Dev {
