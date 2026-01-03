@@ -6,12 +6,14 @@
 p, superuser, *
 
 # Admin-Rolle
+p, admin, dashboard:view
 p, admin, user:create
 p, admin, user:list
 p, admin, user:delete
 p, admin, selfdestroy
 
-# Viewer-Rolle
+# Viewer-Rolle (read-only access)
+p, viewer, dashboard:view
 p, viewer, user:list
 
 

@@ -165,13 +165,16 @@ msg := session.Manager.PopString(ctx.Req.Context(), "flash_success")
 - **Casbin** for RBAC/ABAC policies
 - Model: `model.conf` in project root
 - Policies: `policy.csv` in project root
-- Enforcer injected into `app.Deps`
+- Enforcer and Perms injected into `app.Deps`
 
 **Middleware:**
 - `middleware.RequireAuth(wrapper)` - Requires authenticated user
-- `middleware.RequirePermission(wrapper, "action")` - Requires specific permission
+- `middleware.RequirePermission(deps.Auth, deps.Users, deps.Perms, "action")` - Requires authentication + permission
 
-**Permission format:** Actions as strings (e.g., `user:create`, `user:list`, `user:delete`)
+**Permission format:** Actions as strings (e.g., `dashboard:view`, `user:create`, `user:list`, `user:delete`)
+
+> **Note:** RequirePermission is a reference implementation. Adapt or remove it based on your needs.
+> For simple apps where "logged in = full access", just use RequireAuth and remove Casbin entirely.
 
 ### Toast Notification System
 
@@ -261,8 +264,7 @@ internal/
   frontend/                 # Gomponents layouts & pages
     layout/                 # Shared layout components
     pages/                  # Page components (login, dashboard, etc.)
-  middleware/               # Chi middleware (auth, permissions, etc.)
-  server/                   # Chi server setup
+  middleware/               # Chi middleware (auth.go, permission.go, chi.go)
   session/                  # SCS session manager
   ucli/                     # CLI commands
   user/                     # User domain model & store
@@ -273,14 +275,15 @@ static/                     # Static assets (CSS, JS, images)
   js/                       # Frontend JavaScript
 model.conf                  # Casbin RBAC model
 policy.csv                  # Casbin policies
-server.go                   # Server startup logic
+server.go                   # Server startup, buildRouter()
+routes.go                   # Route definitions
 ```
 
 ## Development Guidelines
 
 ### When Adding New Routes
 
-1. Add route to Chi router in `internal/server/chi_routing.go` (or create new routing file)
+1. Add route to Chi router in `routes.go`
 2. Use `wrapper.Wrap(handlerFunc)` to wrap your handler
 3. Handler signature: `func(*handler.Context) error`
 4. Use Chi URL param extraction: `chi.URLParam(ctx.Req, "id")`
@@ -288,7 +291,7 @@ server.go                   # Server startup logic
 
 **Example:**
 ```go
-// In internal/server/chi_routing.go
+// In routes.go
 func AddUserRoutes(r chi.Router, wrapper *handler.Wrapper, deps app.Deps) {
     r.Get("/users/{id}", wrapper.Wrap(func(ctx *handler.Context) error {
         id := chi.URLParam(ctx.Req, "id")
@@ -323,6 +326,27 @@ func MyMiddleware(wrapper *handler.Wrapper) func(http.Handler) http.Handler {
     }
 }
 ```
+
+### Default Middleware Stack
+
+The application uses a layered middleware stack configured in `server.go:buildRouter()`:
+
+```go
+r.Use(chimiddleware.RealIP)          // Extract real IP from proxy headers
+r.Use(chimiddleware.Compress(5))     // Gzip compression
+r.Use(session.Manager.LoadAndSave)   // SCS session management (MUST be early)
+r.Use(middleware.Recovery(wrapper))  // Panic recovery with logging
+r.Use(middleware.Logger(wrapper))    // Request logging
+r.Use(middleware.CORS())             // CORS headers for HTMX
+r.Use(middleware.RateLimit)          // Rate limiting (placeholder)
+r.Use(libmw.Secure)                  // Security headers (from hagg-lib)
+```
+
+**Security Headers (libmw.Secure):**
+- `X-Frame-Options: DENY` - Prevents clickjacking
+- `X-Content-Type-Options: nosniff` - Prevents MIME sniffing
+- `X-XSS-Protection: 1; mode=block` - Legacy XSS filter
+- `Referrer-Policy: strict-origin-when-cross-origin` - Limits referrer info
 
 ### File Organization
 
@@ -368,9 +392,10 @@ Use `go run ./cmd -config` to print active configuration.
 - `MIGRATION.md` - Migration guide for users upgrading from old Gin-based hagg
 - `ARCHITECTURE.md` - Deep architectural documentation
 - `server.go` - Server startup logic
-- `internal/server/chi_routing.go` - Chi route definitions
+- `routes.go` - Chi route definitions
 - `internal/session/manager.go` - SCS session manager
-- `internal/middleware/chi.go` - Chi middleware stack
+- `internal/middleware/auth.go` - RequireAuth, RequireGuest middleware
+- `internal/middleware/permission.go` - RequirePermission middleware (Casbin-based)
 - `internal/auth/auth.go` - Authentication logic
 
 ## Handler Pattern Reference

@@ -65,7 +65,7 @@ Chi routes requests → Gomponents render HTML → HTMX updates parts of the pag
 
 ### Requirements
 
-- Go 1.21+ (see `go.mod`)
+- Go 1.23+ (see `go.mod`)
 - SQLite (default database)
 - [just](https://github.com/casey/just) (task runner, optional but recommended)
 - [Tailwind CLI](https://tailwindcss.com/blog/standalone-cli) (standalone binary, installed to `~/.local/bin`)
@@ -163,7 +163,7 @@ Authentication is intentionally simple:
 See:
 
 - `internal/auth/auth.go`
-- `internal/middleware/chi.go` (RequireAuth middleware)
+- `internal/middleware/auth.go` (RequireAuth middleware)
 - `internal/frontend/pages/login/*`
 
 ---
@@ -213,25 +213,29 @@ g, alice, admin
 
 ### Enforcement
 
-`internal/authz.MustNewEnforcer()` loads `model.conf` and `policy.csv` from the working directory
+The Casbin enforcer is initialized in `server.go:buildRouter()` using `casbinx.NewFileEnforcer()`
+from hagg-lib. It loads `model.conf` and `policy.csv` from the working directory
 and injects a `*casbin.Enforcer` into `app.Deps`.
 
 ### Middleware
 
-`internal/middleware/chi.go` provides:
+`internal/middleware/auth.go` provides:
 
 ```go
-middleware.RequirePermission(deps, "user:list")
+middleware.RequireAuth(wrapper)   // Requires logged-in user
+middleware.RequireGuest(wrapper)  // Requires NOT logged-in (e.g., login page)
 ```
 
 Behavior:
 
-- If authentication is missing → flash + redirect (same as `RequireAuth`)
-- If the policy/model are broken → 500 + error
-- If permission is denied → 403 + warning
+- `RequireAuth`: If not authenticated → redirect to login
+- `RequireGuest`: If already authenticated → redirect to dashboard
 
-> **Tip:** In routes, we typically compose middlewares like:
-> `RequireAuth` (or `RequirePermission`) → handler.
+For permission-based access control, use Casbin's enforcer directly in handlers,
+or extend the middleware as needed for your use case.
+
+> **Tip:** In routes, compose middlewares like:
+> `RequireAuth` → handler (for protected pages)
 
 ---
 
@@ -257,13 +261,16 @@ Both are processed by the same JavaScript event handler, creating a unified flow
 ### Backend Usage:
 
 ```go
-func LoginHandler(ctx *handler.Context, deps *Deps) error {
-    // ... authentication logic ...
+// Handler factory pattern (returns handler.HandlerFunc)
+func HxLogin(deps app.Deps) handler.HandlerFunc {
+    return func(ctx *handler.Context) error {
+        // ... authentication logic ...
 
-    ctx.Toast("Welcome back!").Success().Notify()
-    ctx.Event("auth-changed", nil)
+        ctx.Toast("Welcome back!").Success().Notify()
+        ctx.Event("auth-changed", nil)
 
-    return ctx.Render(pages.Dashboard())
+        return ctx.NoContent()  // HTMX will react to events
+    }
 }
 ```
 
@@ -276,25 +283,31 @@ See `ARCHITECTURE.md` for detailed event flow diagrams.
 A simplified overview:
 
 ```
-cmd/                # composition root (CLI flags + server startup)
+server.go             # Server startup, buildRouter(), middleware stack
+routes.go             # Route definitions (AddRoutes)
+model.conf            # Casbin RBAC model
+policy.csv            # Casbin policies
+justfile              # Task runner (dev, build, css-build, css-watch)
+
+cmd/                  # CLI entry point (urfave/cli)
 internal/
-  app/              # dependency container (Deps)
-  auth/             # session auth (scs-based)
-  authz/            # Casbin enforcer setup
-  config/           # env/.env config loading
-  http/
-    middleware/     # Chi middleware (auth, permissions, HTMX triggers)
-    render/         # DRY page renderer (gomponents)
-  frontend/         # layouts + pages (gomponents)
-  user/             # domain model + store interface
-  user/store_sqlite # SQLite implementation
-migrations/         # SQL migrations
-static/             # static assets (served, also embedded)
-  css/              # Tailwind CSS (base.css → styles.css)
-  js/               # Frontend logic (app.js, surreal.js, etc.)
-model.conf          # Casbin model
-policy.csv          # Casbin policies
-justfile            # Task runner (css-build, css-watch)
+  app/                # Dependency container (Deps struct)
+  auth/               # Session-based authentication (SCS)
+  config/             # Environment config loading (.env support)
+  db/                 # Database connection setup
+  frontend/           # Gomponents UI layer
+    layout/           # Shared layout components (skeleton, nav, events)
+    pages/            # Page handlers (home, login, dashboard)
+  middleware/         # Chi middleware (auth, permissions, logging)
+  session/            # SCS session manager (SQLite backend)
+  ucli/               # CLI commands (serve, user management)
+  user/               # User domain model + store interface
+    store_sqlite/     # SQLite implementation
+
+migrations/           # SQL migrations (numbered files)
+static/               # Static assets (CSS, JS, images)
+  css/                # Tailwind CSS (base.css → styles.css)
+  js/                 # Frontend logic (app.js, toast.js, etc.)
 ```
 
 For deeper reasoning and request flow, see **[ARCHITECTURE.md](ARCHITECTURE.md)**.
@@ -305,10 +318,21 @@ For deeper reasoning and request flow, see **[ARCHITECTURE.md](ARCHITECTURE.md)*
 
 This project is split into two repositories:
 
-- **hagg-lib** — reusable library (context wrapper, toast system, events, middleware)
+- **hagg-lib** — reusable library (context wrapper, toast system, events, middleware, Casbin helpers)
 - **hagg** — boilerplate project (imports hagg-lib)
 
-### Why?
+### What hagg-lib provides:
+
+| Package | Purpose |
+|---------|---------|
+| `handler` | Context wrapper with fluent API (`ctx.Render()`, `ctx.Toast()`, `ctx.Event()`) |
+| `hxevents` | Server-to-client event system (HX-Trigger headers + initial-events scripts) |
+| `toast` | Toast notification builder (success, error, warning, info) |
+| `middleware` | BasePath injection, Security headers |
+| `casbinx` | Casbin enforcer helpers |
+| `view` | URL helpers (basePath-aware) |
+
+### Why the split?
 
 Users who fork `hagg` can update `hagg-lib` without merge conflicts.
 The library provides stable building blocks, while the boilerplate is meant to be customized.

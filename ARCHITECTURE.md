@@ -93,23 +93,24 @@ We use **Chi v5** as our HTTP router.
 - Composable middleware
 - Idiomatically Go
 
-**Example routing:**
+**Example routing (from `routes.go`):**
 
 ```go
-r := chi.NewRouter()
+func AddRoutes(r chi.Router, wrapper *handler.Wrapper, deps app.Deps) {
+    // Public routes
+    r.Get("/", wrapper.Wrap(home.Page(deps)))
+    r.Get("/login", wrapper.Wrap(login.Page(deps)))
 
-// Middleware
-r.Use(middleware.Logger)
-r.Use(sessionManager.LoadAndSave)
+    // HTMX endpoints
+    r.Post("/htmx/login", wrapper.Wrap(login.HxLogin(deps)))
+    r.Post("/htmx/logout", wrapper.Wrap(login.HxLogout(deps)))
 
-// Public routes
-r.Get("/", deps.Wrap(pages.Home))
-
-// Protected routes
-r.Group(func(r chi.Router) {
-    r.Use(middleware.RequireAuth(deps))
-    r.Get("/dashboard", deps.Wrap(pages.Dashboard))
-})
+    // Protected routes (require authentication + permission)
+    r.Group(func(r chi.Router) {
+        r.Use(middleware.RequirePermission(deps.Auth, deps.Users, deps.Perms, "dashboard:view"))
+        r.Get("/dashboard", wrapper.Wrap(dashboard.Page(deps)))
+    })
+}
 ```
 
 #### Context Wrapper
@@ -167,14 +168,30 @@ func (w *Wrapper) Wrap(h HandlerFunc) http.HandlerFunc {
 }
 ```
 
-**Usage in handlers:**
+**Usage in handlers (Factory Pattern):**
+
+Handlers use the factory pattern — a function that takes dependencies and returns a `handler.HandlerFunc`:
 
 ```go
-func Dashboard(ctx *handler.Context, deps *app.Deps) error {
-    ctx.Toast("Welcome!").Success().Notify()
-    return ctx.Render(pages.DashboardPage())
+func Page(deps app.Deps) handler.HandlerFunc {
+    return func(ctx *handler.Context) error {
+        user, _ := deps.Auth.CurrentUser(ctx.Req)
+
+        content := Div(
+            H1(g.Text("Dashboard")),
+            P(g.Textf("Welcome, %s!", user.FullName())),
+        )
+
+        return ctx.Render(layout.Page(ctx, deps, content))
+    }
 }
 ```
+
+**Why the factory pattern?**
+
+- Dependencies are captured in the closure — no global state
+- Handler signature is clean (`func(*Context) error`)
+- Easy to test (inject mock dependencies)
 
 #### Session Management (scs)
 
@@ -187,48 +204,51 @@ We use **alexedwards/scs** for session management.
 - Simple API
 - Actively maintained
 
-**Default: Cookiestore (zero deps, stateless)**
+**Default: SQLite-backed sessions (persistent)**
+
+Sessions are stored in SQLite, meaning they persist across server restarts:
 
 ```go
-sessionManager := scs.New()
-sessionManager.Store = cookiestore.New([]byte(secretKey))
-sessionManager.Lifetime = 24 * time.Hour
-```
+// internal/session/manager.go
+func Init(dbPath string) error {
+    db, err := sql.Open("sqlite3", dbPath)
+    if err != nil {
+        return err
+    }
 
-**Optional: Database-backed sessions**
+    Manager = scs.New()
+    Manager.Store = sqlite3store.New(db)
+    Manager.Lifetime = 24 * time.Hour
+    Manager.Cookie.Name = "hagg_session"
+    Manager.Cookie.HttpOnly = true
+    Manager.Cookie.Secure = false // Set to true in production (HTTPS)
 
-```go
-// Via environment variable
-switch cfg.SessionStore {
-case "sqlite":
-    sessionManager.Store = sqlite3store.New(db)
-case "postgres":
-    sessionManager.Store = postgresstore.New(db)
-case "redis":
-    sessionManager.Store = redisstore.New(pool)
-default:
-    sessionManager.Store = cookiestore.New([]byte(secretKey))
+    return nil
 }
 ```
 
-**Flash messages:**
+**Global Manager Pattern:**
 
-Flash messages are session-based (for redirects):
+The session manager is accessed globally via `session.Manager`:
 
 ```go
-// Set flash (handler)
-sessionManager.Put(ctx.Req.Context(), "flash", map[string]string{
-    "message": "Logged out successfully",
-    "level":   "info",
-})
+// Get value
+uid := session.Manager.GetString(ctx.Req.Context(), "uid")
 
-// Read flash (layout)
-if flash := sessionManager.PopString(ctx.Req.Context(), "flash"); flash != "" {
-    ctx.Event("toast", parseFlash(flash))
-}
+// Set value
+session.Manager.Put(ctx.Req.Context(), "uid", userUID)
+
+// Flash messages (pop = get and remove)
+msg := session.Manager.PopString(ctx.Req.Context(), "flash_success")
 ```
 
-Flash is converted to an event during layout rendering, creating a unified toast system.
+**Session Middleware:**
+
+The session middleware must be registered early in the middleware stack:
+
+```go
+r.Use(session.Manager.LoadAndSave)  // MUST come before auth middleware
+```
 
 ### Frontend
 
@@ -548,50 +568,75 @@ function showToast({ message, level = 'info', timeout = 5000, position = 'bottom
 Authentication is **session-based** and deliberately minimal:
 
 - We store the logged-in user UID in the session (key: `uid`)
-- `Auth.CurrentUser(ctx)` reads the session and loads the user from `user.Store`
+- `Auth.CurrentUser(req)` reads the session and loads the user from `user.Store`
+- See `internal/auth/auth.go` for implementation
 
 **Auth struct:**
 
 ```go
 type Auth struct {
-    sessionManager *scs.SessionManager
-    userStore      user.Store
+    users user.Store
 }
 
-func (a *Auth) CurrentUser(ctx context.Context) (*user.User, error) {
-    uid := a.sessionManager.GetString(ctx, "uid")
-    if uid == "" {
+func New(users user.Store) *Auth {
+    return &Auth{users: users}
+}
+
+func (a *Auth) CurrentUser(req *http.Request) (*user.User, error) {
+    rawUID := session.Manager.Get(req.Context(), SessionKeyUID)
+    uid, ok := rawUID.(string)
+    if !ok || uid == "" {
         return nil, ErrNotAuthenticated
     }
-    return a.userStore.GetByUID(uid)
+    return a.users.FindByUID(req.Context(), uid)
 }
 
-func (a *Auth) Login(ctx context.Context, uid string) {
-    a.sessionManager.Put(ctx, "uid", uid)
-}
-
-func (a *Auth) Logout(ctx context.Context) {
-    a.sessionManager.Remove(ctx, "uid")
+func (a *Auth) IsAuthenticated(req *http.Request) bool {
+    rawUID := session.Manager.Get(req.Context(), SessionKeyUID)
+    uid, ok := rawUID.(string)
+    return ok && uid != ""
 }
 ```
 
-**Middleware:**
+**Middleware (RequireAuth):**
 
 ```go
-func RequireAuth(deps *app.Deps) func(http.Handler) http.Handler {
+// RequireAuth ensures user is logged in (UID in session)
+func RequireAuth(wrapper *handler.Wrapper) func(http.Handler) http.Handler {
     return func(next http.Handler) http.Handler {
         return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-            user, err := deps.Auth.CurrentUser(r.Context())
-            if err != nil {
-                // Not authenticated
-                deps.SessionManager.Put(r.Context(), "flash", "Please log in")
-                http.Redirect(w, r, "/login", http.StatusFound)
+            rawUID := session.Manager.Get(r.Context(), auth.SessionKeyUID)
+            uid, ok := rawUID.(string)
+
+            if !ok || uid == "" {
+                http.Redirect(w, r, "/login", http.StatusSeeOther)
                 return
             }
 
-            // Add user to request context
-            ctx := context.WithValue(r.Context(), "user", user)
-            next.ServeHTTP(w, r.WithContext(ctx))
+            next.ServeHTTP(w, r)
+        })
+    }
+}
+```
+
+**RequireGuest middleware:**
+
+For pages that should only be accessible to non-authenticated users (login, register):
+
+```go
+// RequireGuest ensures user is NOT logged in
+func RequireGuest(wrapper *handler.Wrapper) func(http.Handler) http.Handler {
+    return func(next http.Handler) http.Handler {
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+            rawUID := session.Manager.Get(r.Context(), auth.SessionKeyUID)
+            uid, ok := rawUID.(string)
+
+            if ok && uid != "" {
+                http.Redirect(w, r, "/", http.StatusSeeOther)
+                return
+            }
+
+            next.ServeHTTP(w, r)
         })
     }
 }
@@ -601,11 +646,26 @@ func RequireAuth(deps *app.Deps) func(http.Handler) http.Handler {
 
 ## Authorization (Permission Layer)
 
-### Goals
+> **Important:** This section describes a **reference implementation** that you can adapt or discard
+> based on your application's needs. Not every app needs fine-grained permissions!
 
-- Permissions should be configurable without code changes
-- Handlers should stay clean ("require X to do Y")
-- Error cases should be visible (misconfigured policy/model)
+### When You Need This
+
+Use Casbin-based authorization when:
+
+- **Multi-user apps** with different roles (admin, editor, viewer)
+- **Fine-grained access control** (user:create, user:delete, report:export)
+- **Permissions change without code** (policy file edits, no rebuild)
+
+### When You DON'T Need This
+
+Skip Casbin and remove it entirely when:
+
+- **Single-user tools** — just use `RequireAuth`
+- **Simple CRUD apps** — resource ownership checks in handlers are enough
+- **"Logged in = full access"** — `RequireAuth` is sufficient
+
+If your app only needs "logged in or not", use `RequireAuth` and delete the Casbin files.
 
 ### Casbin Integration
 
@@ -613,7 +673,25 @@ We use **Casbin** as the authorization engine:
 
 - `model.conf` defines the evaluation model (RBAC)
 - `policy.csv` defines roles/permissions and user-role assignments
-- `internal/authz.MustNewEnforcer()` loads both from the working directory
+- `casbinx.NewFileEnforcer()` from hagg-lib loads both files
+
+**Initialization (in `server.go`):**
+
+```go
+enforcer, err := casbinx.NewFileEnforcer(
+    cfg.Casbin.ModelPath,  // default: "model.conf"
+    cfg.Casbin.PolicyPath, // default: "policy.csv"
+)
+if err != nil {
+    log.Fatal(err)
+}
+
+deps := app.Deps{
+    // ...
+    Enforcer: enforcer,
+    Perms:    casbinx.NewPerm(enforcer),
+}
+```
 
 **Why file-based?**
 
@@ -624,49 +702,62 @@ No database required for authorization.
 
 We model permissions as plain action strings:
 
+- `dashboard:view`
 - `user:create`
 - `user:list`
 - `user:delete`
-- `selfdestroy`
 
 This keeps the policy readable and avoids "object explosion" early on.
 
-**Example policy:**
+**Example policy (`policy.csv`):**
 
 ```csv
+# Superuser: can do everything
+p, superuser, *
+
+# Admin role
+p, admin, dashboard:view
 p, admin, user:create
 p, admin, user:list
 p, admin, user:delete
 
-p, user, user:list
+# Viewer role (read-only)
+p, viewer, dashboard:view
+p, viewer, user:list
 
+# User → Role assignments
+g, arudolf, superuser
 g, alice, admin
-g, bob, user
+g, worker, viewer
 ```
 
 ### Middleware: RequirePermission
 
+The `RequirePermission` middleware combines authentication and authorization:
+
 ```go
-func RequirePermission(deps *app.Deps, action string) func(http.Handler) http.Handler {
+func RequirePermission(authService *auth.Auth, users user.Store, perms *casbinx.Perm, action string) func(http.Handler) http.Handler {
     return func(next http.Handler) http.Handler {
         return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-            user, err := deps.Auth.CurrentUser(r.Context())
-            if err != nil {
-                // Not authenticated → redirect
-                http.Redirect(w, r, "/login", http.StatusFound)
+            // Step 1: Check authentication
+            rawUID := session.Manager.Get(r.Context(), auth.SessionKeyUID)
+            uid, ok := rawUID.(string)
+            if !ok || uid == "" {
+                http.Redirect(w, r, "/login", http.StatusSeeOther)
                 return
             }
 
-            allowed, err := deps.Enforcer.Enforce(user.UID, action)
+            // Step 2: Load user for authorization
+            u, err := users.FindByUID(r.Context(), uid)
             if err != nil {
-                // Policy/model error → 500
-                http.Error(w, "Authorization error", 500)
+                http.Error(w, "User not found", http.StatusUnauthorized)
                 return
             }
 
-            if !allowed {
-                // Denied → 403 + warning
-                http.Error(w, "Forbidden", 403)
+            // Step 3: Check permission via Casbin
+            // Subject is DisplayName (adapt if your policy uses UID or email)
+            if !perms.Can(u.DisplayName, action) {
+                http.Error(w, "Permission denied", http.StatusForbidden)
                 return
             }
 
@@ -680,10 +771,20 @@ func RequirePermission(deps *app.Deps, action string) func(http.Handler) http.Ha
 
 ```go
 r.Group(func(r chi.Router) {
-    r.Use(middleware.RequirePermission(deps, "user:list"))
-    r.Get("/users", deps.Wrap(pages.UserList))
+    r.Use(middleware.RequirePermission(deps.Auth, deps.Users, deps.Perms, "dashboard:view"))
+    r.Get("/dashboard", wrapper.Wrap(dashboard.Page(deps)))
 })
 ```
+
+### Customization Notes
+
+This implementation uses `DisplayName` as the Casbin subject. Depending on your needs:
+
+- **UID as subject** — unique and stable, but less readable in policy.csv
+- **Email as subject** — readable, but may change
+- **Role in session** — skip user lookup entirely
+
+Adapt the middleware to match your policy design.
 
 ### Flow Diagram
 
@@ -691,16 +792,18 @@ r.Group(func(r chi.Router) {
 sequenceDiagram
     participant B as Browser
     participant M as Middleware
-    participant A as Auth
+    participant S as Session
+    participant U as UserStore
     participant C as Casbin
     participant H as Handler
 
     B->>M: request
-    M->>A: CurrentUser()
+    M->>S: Get(uid)
     alt not logged in
         M-->>B: redirect /login
     else logged in
-        M->>C: Enforce(uid, action)
+        M->>U: FindByUID(uid)
+        M->>C: Can(displayName, action)
         alt denied
             M-->>B: 403 Forbidden
         else allowed
@@ -718,25 +821,30 @@ We use **Gomponents** for type-safe HTML rendering.
 
 **Key idea:**
 
-- A **page** is `func(*handler.Context, *app.Deps) error`
+- A **page** is a factory function: `func(deps app.Deps) handler.HandlerFunc`
+- The factory captures dependencies and returns a handler
 - The handler renders Gomponents into `handler.Context`
 
-**Example page:**
+**Example page (Factory Pattern):**
 
 ```go
-func Dashboard(ctx *handler.Context, deps *app.Deps) error {
-    user, _ := deps.Auth.CurrentUser(ctx.Req.Context())
+// internal/frontend/pages/dashboard/page.go
+func Page(deps app.Deps) handler.HandlerFunc {
+    return func(ctx *handler.Context) error {
+        user, _ := deps.Auth.CurrentUser(ctx.Req)
 
-    page := layout.Base(
-        html.H1(g.Text("Dashboard")),
-        html.P(g.Textf("Welcome, %s!", user.Name)),
-    )
+        content := Div(
+            Class("container"),
+            H1(g.Text("Dashboard")),
+            P(g.Textf("Welcome, %s!", user.FullName())),
+        )
 
-    return ctx.Render(page)
+        return ctx.Render(layout.Page(ctx, deps, content))
+    }
 }
 ```
 
-**Render helper:**
+**Render helper (from hagg-lib):**
 
 ```go
 func (c *Context) Render(node g.Node) error {
@@ -752,134 +860,176 @@ func (c *Context) Render(node g.Node) error {
 - Pure Go (no external DSL)
 - Composable (functions returning nodes)
 
+**Why the factory pattern?**
+
+- Dependencies are captured at route registration time
+- Handler signature stays clean (`func(*Context) error`)
+- Easy to test — inject mock dependencies
+
 ---
 
 ## Directory Layout (Detailed)
 
 ```
+server.go             # Server startup, buildRouter(), middleware stack
+routes.go             # Route definitions (AddRoutes function)
+model.conf            # Casbin RBAC model
+policy.csv            # Casbin policies (roles → actions, users → roles)
+justfile              # Task runner (dev, build, css-build, css-watch)
+tailwind.config.js    # Tailwind CSS configuration
+
 cmd/
-  main.go             # composition root (flags, db, server start)
+  main.go             # CLI entry point (urfave/cli)
 
 internal/
   app/
-    deps.go           # dependency container
+    deps.go           # Dependency container (Deps struct)
 
   auth/
-    auth.go           # session-based auth (scs)
-
-  authz/
-    enforcer.go       # Casbin setup
+    auth.go           # Session-based authentication
 
   config/
-    config.go         # env + .env loading
+    config.go         # Environment config loading (.env support)
 
-  session/
-    store.go          # session store setup (cookie/sqlite/postgres/redis)
-
-  middleware/
-    chi.go          # Chi-specific middleware (RequireAuth, RequirePermission, etc.)
+  db/
+    sqlite.go         # Database connection setup
 
   frontend/
     layout/
-      base.go         # HTML skeleton
-      nav.go          # navigation
-      events.go       # initial-events renderer
+      skeleton.go     # HTML skeleton (<html>, <head>, <body>)
+      page.go         # Page wrapper with layout
+      nav.go          # Navigation component
+      events.go       # Initial-events renderer
 
     pages/
-      login/          # login page + handlers
-      dashboard/      # dashboard page
-      users/          # user list
+      home/           # Homepage
+        page.go
+      login/          # Login page + HTMX handlers
+        page.go
+        components.go
+        handler.go
+      dashboard/      # Protected dashboard
+        page.go
 
-    shared/
-      link.go         # link helpers
-      container.go    # layout helpers
+  middleware/
+    auth.go           # RequireAuth, RequireGuest
+    permission.go     # RequirePermission (Casbin-based)
+    chi.go            # Logger, Recovery, CORS, RateLimit
+
+  session/
+    manager.go        # SCS session manager (SQLite backend)
+
+  ucli/
+    serve.go          # CLI serve command
+    user.go           # CLI user management
 
   user/
-    user.go           # domain model + store interface
+    model.go          # User domain model
+    store.go          # Store interface
     store_sqlite/
       store.go        # SQLite implementation
 
 migrations/
-  001_initial.sql
+  001_initial.sql     # Initial schema
+  002_sessions.sql    # SCS sessions table
 
 static/
   css/
     base.css          # Tailwind input
-    styles.css        # Tailwind output (generated)
+    styles.css        # Tailwind output (generated, gitignored)
 
   js/
-    app.js            # event processing, toast rendering
-    surreal.js        # surreal.js library
-    alpine.js         # Alpine.js (CDN or local)
-    htmx.js           # HTMX (CDN or local)
-
-model.conf            # Casbin model
-policy.csv            # Casbin policies
-justfile              # task runner (css-build, css-watch)
-tailwind.config.js    # Tailwind configuration
+    app.js            # Main application logic
+    toast.js          # Toast notification system
+    surreal.min.js    # surreal.js library
+    alpine.min.js     # Alpine.js (local copy)
+    htmx.min.js       # HTMX (local copy)
 ```
 
 ---
 
 ## Composition Root
 
-The composition root lives in `cmd/main.go`.
+The composition root is split between `cmd/main.go` (CLI) and `server.go` (server setup).
 
-**Responsibilities:**
+**CLI (`cmd/main.go`):**
 
-- Parse flags (`-config`, `-new-user`)
-- Load config (`internal/config`)
-- Open database (`database/sql`)
+- Parse CLI flags and commands (urfave/cli)
+- Load config
+- Open database
 - Run migrations
-- Choose concrete implementations (e.g. `store_sqlite`)
-- Setup session manager (cookiestore, sqlite, etc.)
-- Load Casbin enforcer
-- Start the server with fully wired dependencies
+- Delegate to `hagg.StartServer()`
 
-**Example:**
+**Server (`server.go`):**
+
+- Initialize session manager
+- Build Chi router with middleware
+- Wire dependencies
+- Start HTTP server (TCP or Unix socket)
+
+**buildRouter function (from `server.go`):**
 
 ```go
-func main() {
-    // Load config
-    cfg := config.Load()
+func buildRouter(cfg *config.Config, usrStore user.Store) http.Handler {
+    // Create logger
+    logger := slog.Default()
 
-    // Open database
-    db, err := sql.Open("sqlite3", cfg.DatabasePath)
+    // Create handler wrapper (from hagg-lib)
+    wrapper := handler.NewWrapper(logger)
+
+    // Casbin enforcer (from hagg-lib)
+    enforcer, err := casbinx.NewFileEnforcer(
+        cfg.Casbin.ModelPath,
+        cfg.Casbin.PolicyPath,
+    )
     if err != nil {
         log.Fatal(err)
     }
 
-    // Session manager
-    sessionManager := session.Setup(cfg, db)
-
-    // User store
-    userStore := store_sqlite.New(db)
-
-    // Auth
-    auth := auth.New(sessionManager, userStore)
-
-    // Casbin enforcer
-    enforcer := authz.MustNewEnforcer()
-
     // Dependencies
-    deps := &app.Deps{
-        Users:          userStore,
-        Auth:           auth,
-        Enforcer:       enforcer,
-        SessionManager: sessionManager,
-        Logger:         slog.Default(),
+    deps := app.Deps{
+        Users:    usrStore,
+        Auth:     auth.New(usrStore),
+        Enforcer: enforcer,
+        Perms:    casbinx.NewPerm(enforcer),
     }
 
-    // Router
-    r := setupRouter(deps)
+    // Create Chi router
+    r := chi.NewRouter()
 
-    // Start server
-    log.Printf("Server starting on :%s", cfg.Port)
-    http.ListenAndServe(":"+cfg.Port, r)
+    // Middleware stack (order matters!)
+    r.Use(chimw.RealIP)                    // Extract real IP from proxy headers
+    r.Use(chimw.Compress(5))               // Gzip compression
+    r.Use(session.Manager.LoadAndSave)     // SCS sessions (MUST be early!)
+    r.Use(middleware.Recovery(wrapper))    // Panic recovery
+    r.Use(middleware.Logger(wrapper))      // Request logging
+    r.Use(middleware.CORS())               // CORS headers
+    r.Use(middleware.RateLimit)            // Rate limiting
+    r.Use(libmw.Secure)                    // Security headers
+
+    // Static files
+    fs := http.FileServer(http.Dir("./static"))
+    r.Handle("/static/*", http.StripPrefix("/static/", fs))
+
+    // Application routes
+    AddRoutes(r, wrapper, deps)
+
+    return r
 }
 ```
 
-This keeps the rest of the code free of "how do we build things?" concerns.
+**Deps struct (`internal/app/deps.go`):**
+
+```go
+type Deps struct {
+    Users    user.Store
+    Auth     *auth.Auth
+    Enforcer *casbin.Enforcer
+    Perms    *casbinx.Perm
+}
+```
+
+This separation keeps CLI concerns separate from HTTP wiring.
 
 ---
 

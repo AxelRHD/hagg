@@ -9,8 +9,9 @@ import (
 )
 
 // Page renders the homepage with HAGG stack presentation.
-func Page(ctx *handler.Context, deps app.Deps) error {
-	content := Div(
+func Page(deps app.Deps) handler.HandlerFunc {
+	return func(ctx *handler.Context) error {
+		content := Div(
 		Class("container"),
 		Style("padding: 2rem 0;"),
 
@@ -133,5 +134,6 @@ func Page(ctx *handler.Context, deps app.Deps) error {
 		),
 	)
 
-	return ctx.Render(layout.Page(ctx, deps, content))
+		return ctx.Render(layout.Page(ctx, deps, content))
+	}
 }

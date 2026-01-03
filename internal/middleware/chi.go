@@ -83,20 +83,3 @@ func RateLimit(next http.Handler) http.Handler {
 	})
 }
 
-// Secure is a Chi-compatible middleware that sets security headers.
-// It sets common security headers to protect against XSS, clickjacking, etc.
-//
-// Example:
-//
-//	r.Use(middleware.Secure)
-func Secure(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Security headers
-		w.Header().Set("X-Frame-Options", "DENY")
-		w.Header().Set("X-Content-Type-Options", "nosniff")
-		w.Header().Set("X-XSS-Protection", "1; mode=block")
-		w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
-
-		next.ServeHTTP(w, r)
-	})
-}

@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/axelrhd/hagg-lib/casbinx"
 	"github.com/axelrhd/hagg/internal/auth"
 	"github.com/axelrhd/hagg/internal/user"
 
@@ -13,4 +14,5 @@ type Deps struct {
 
 	// Authorization (RBAC / ABAC)
 	Enforcer *casbin.Enforcer
+	Perms    *casbinx.Perm // Wrapper for permission checks (enforcer.Can(subject, action))
 }

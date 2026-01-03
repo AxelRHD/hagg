@@ -10,16 +10,17 @@ import (
 
 // Page renders the protected dashboard page.
 // This page is only accessible to authenticated users.
-func Page(ctx *handler.Context, deps app.Deps) error {
-	user, _ := deps.Auth.CurrentUser(ctx.Req)
+func Page(deps app.Deps) handler.HandlerFunc {
+	return func(ctx *handler.Context) error {
+		user, _ := deps.Auth.CurrentUser(ctx.Req)
 
-	// Get username safely
-	username := "User"
-	if user != nil {
-		username = user.FullName()
-	}
+		// Get username safely
+		username := "User"
+		if user != nil {
+			username = user.FullName()
+		}
 
-	content := Div(
+		content := Div(
 		Class("container"),
 		Style("padding: 2rem 0;"),
 
@@ -142,5 +143,6 @@ func Page(ctx *handler.Context, deps app.Deps) error {
 		),
 	)
 
-	return ctx.Render(layout.Page(ctx, deps, content))
+		return ctx.Render(layout.Page(ctx, deps, content))
+	}
 }
