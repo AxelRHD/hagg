@@ -175,10 +175,10 @@ msg := session.Manager.PopString(ctx.Req.Context(), "flash_success")
 
 ### Toast Notification System
 
-> ⚠️ **WICHTIG: Architektur-Entscheidung**
+> ⚠️ **IMPORTANT: Architecture Decision**
 >
-> Der HTMX Toast-Listener **MUSS auf dem `<body>`-Element** sitzen, nicht auf einzelnen Formularen!
-> Siehe Abschnitt unten für Details.
+> The HTMX toast listener **MUST be on the `<body>` element**, not on individual forms!
+> See section below for details.
 
 **Backend (hagg-lib/toast):**
 ```go
@@ -188,14 +188,14 @@ ctx.Toast("Error occurred").Error().Stay().Notify()
 ctx.Toast("Warning").Warning().SetTimeout(3000).Notify()
 ```
 
-**Frontend - Zwei Delivery-Mechanismen:**
+**Frontend - Two Delivery Mechanisms:**
 
-1. **HTMX-Requests** → `HX-Trigger` Header mit `toast` Event
-2. **Full-Page-Loads** → `RenderEvents()` erzeugt selbst-zerstörende `<script>`-Tags
+1. **HTMX Requests** → `HX-Trigger` header with `toast` event
+2. **Full Page Loads** → `RenderEvents()` generates self-destructing `<script>` tags
 
-**Toast-Listener-Architektur (KRITISCH!):**
+**Toast Listener Architecture (CRITICAL!):**
 
-Der Toast-Listener wird **einmal global auf dem `<body>`** registriert in `skeleton.go`:
+The toast listener is registered **once globally on `<body>`** in `skeleton.go`:
 
 ```go
 Body(
@@ -207,26 +207,26 @@ Body(
 )
 ```
 
-**WARUM auf `<body>` und nicht auf einzelnen Forms?**
+**WHY on `<body>` and not on individual forms?**
 
-1. **HTMX bubblet nicht** - Events triggern nur auf dem Element, das den Request gemacht hat
-2. **Ein Listener reicht** - Der `<body>` wird nie per HTMX geswappt
-3. **Keine Duplikate** - Mehrere Listener = mehrere Toasts pro Event
-4. **Zukunftssicher** - Neue Forms brauchen keinen eigenen Listener
+1. **HTMX doesn't bubble** - Events fire only on the element that made the request
+2. **One listener is enough** - The `<body>` is never swapped by HTMX
+3. **No duplicates** - Multiple listeners = multiple toasts per event
+4. **Future-proof** - New forms don't need their own listener
 
-**FALSCH** (führt zu fehlenden oder doppelten Toasts):
+**WRONG** (causes missing or duplicate toasts):
 ```go
-// ❌ NICHT SO - Listener auf jedem Form
+// ❌ DON'T DO THIS - Listener on each form
 Form(
     hx.Post("/htmx/login"),
-    hx.On("toast", "showToast(event.detail)"),  // NEIN!
+    hx.On("toast", "showToast(event.detail)"),  // NO!
     ...
 )
 ```
 
-**RICHTIG:**
+**CORRECT:**
 ```go
-// ✅ SO - Ein Listener auf <body> in skeleton.go
+// ✅ DO THIS - One listener on <body> in skeleton.go
 Body(
     hx.On("toast", "showToast(event.detail)"),
     grp,
@@ -234,10 +234,10 @@ Body(
 ```
 
 **Frontend (static/js/toast.js):**
-- `showToast({ message, level, timeout, position })` - Zeigt Toast an
-- SVG-Icons für success, error, warning, info
-- Auto-dismiss nach Timeout (default: 5000ms)
-- Fade-in/out Animation
+- `showToast({ message, level, timeout, position })` - Displays toast notification
+- SVG icons for success, error, warning, info
+- Auto-dismiss after timeout (default: 5000ms)
+- Fade-in/out animation
 
 ### CSS & Styling
 
