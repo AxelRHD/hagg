@@ -3,13 +3,15 @@ package ucli
 import (
 	"context"
 
+	"github.com/axelrhd/hagg/internal/version"
 	"github.com/urfave/cli/v3"
 )
 
 func New() *cli.Command {
 	return &cli.Command{
-		Name:  "kl-toolbox",
-		Usage: "KL Toolbox server and admin CLI",
+		Name:    "hagg",
+		Usage:   "HAGG Stack server and admin CLI",
+		Version: version.Version,
 
 		EnableShellCompletion: true,
 

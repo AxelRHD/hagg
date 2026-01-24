@@ -33,8 +33,8 @@ func Page(deps app.Deps) handler.HandlerFunc {
 			hx.Select("#page"),
 			hx.Swap("outerHTML"),
 
-			// Centering
-			Class("flex items-center justify-center pa3"),
+			// Centering with Bootstrap utilities
+			Class("d-flex align-items-center justify-content-center p-3"),
 			Style("min-height: 80vh"),
 
 			g.If(!deps.Auth.IsAuthenticated(ctx.Req),

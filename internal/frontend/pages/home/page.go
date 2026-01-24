@@ -12,127 +12,150 @@ import (
 func Page(deps app.Deps) handler.HandlerFunc {
 	return func(ctx *handler.Context) error {
 		content := Div(
-		Class("container"),
-		Style("padding: 2rem 0;"),
+			Class("container py-4"),
 
-		// Hero section
-		Header(
-			Class("text-center"),
-			Style("margin-bottom: 3rem;"),
+			// Hero section
+			Header(
+				Class("text-center mb-5"),
 
-			H1(
-				Style("font-size: 3rem; margin-bottom: 1rem;"),
-				g.Text("HAGG Stack"),
-			),
-			P(
-				Style("font-size: 1.25rem; color: var(--muted-color);"),
-				g.Text("A modern, minimal Go web application boilerplate"),
-			),
-		),
-
-		// What is HAGG section
-		Article(
-			Style("margin-bottom: 2rem;"),
-			H2(g.Text("What is HAGG?")),
-			P(
-				g.Text("HAGG is a full-stack web development approach combining:"),
-			),
-			Ul(
-				Li(Strong(g.Text("H")), g.Text("TMX – Hypermedia-driven interactions")),
-				Li(Strong(g.Text("A")), g.Text("lpine.js – Reactive client-side behavior")),
-				Li(Strong(g.Text("G")), g.Text("omponents – Type-safe HTML in Go")),
-				Li(Strong(g.Text("G")), g.Text("o – Server-side rendering with Chi router")),
-			),
-		),
-
-		// Features section
-		Article(
-			Style("margin-bottom: 2rem;"),
-			H2(g.Text("Features")),
-			Div(
-				Class("grid"),
-
-				Div(
-					H3(g.Text("🎯 Type-Safe HTML")),
-					P(g.Text("Write HTML in Go with gomponents. No template files, full compile-time safety.")),
+				H1(
+					Class("display-4 mb-3"),
+					g.Text("HAGG Stack"),
 				),
-
-				Div(
-					H3(g.Text("⚡ HTMX Hypermedia")),
-					P(g.Text("Server-driven UI updates without heavy JavaScript frameworks.")),
-				),
-
-				Div(
-					H3(g.Text("🔐 Built-in Auth")),
-					P(g.Text("Session-based authentication with SCS and SQLite persistence.")),
-				),
-
-				Div(
-					H3(g.Text("🎨 Dark Mode")),
-					P(g.Text("Pico-inspired CSS with Tailwind v4. Dark mode with Alpine.js persistence.")),
-				),
-
-				Div(
-					H3(g.Text("📦 Event System")),
-					P(g.Text("Server-to-client events via HX-Trigger headers. Toast notifications built-in.")),
-				),
-
-				Div(
-					H3(g.Text("🚀 Minimal Dependencies")),
-					P(g.Text("Chi router, SCS sessions, Gomponents. No npm, no build step (except CSS).")),
+				P(
+					Class("lead text-body-secondary"),
+					g.Text("A modern, minimal Go web application boilerplate"),
 				),
 			),
-		),
 
-		// Tech Stack section
-		Article(
-			Style("margin-bottom: 2rem;"),
-			H2(g.Text("Tech Stack")),
-			P(g.Text("This boilerplate demonstrates a complete HAGG application with:")),
-			Ul(
-				Li(Strong(g.Text("Backend:")), g.Text(" Go 1.23+, Chi v5 router, SCS v2 sessions, SQLite")),
-				Li(Strong(g.Text("Frontend:")), g.Text(" HTMX, Alpine.js, Surreal.js, Tailwind CSS v4")),
-				Li(Strong(g.Text("Templates:")), g.Text(" Gomponents (type-safe HTML in Go)")),
-				Li(Strong(g.Text("Authorization:")), g.Text(" Casbin (RBAC/ABAC ready)")),
-				Li(Strong(g.Text("Dev Tools:")), g.Text(" Just (task runner), Air (hot reload)")),
+			// What is HAGG section
+			Article(
+				Class("card mb-4 p-4"),
+				H2(g.Text("What is HAGG?")),
+				P(
+					g.Text("HAGG is a full-stack web development approach combining:"),
+				),
+				Ul(
+					Li(Strong(g.Text("H")), g.Text("TMX – Hypermedia-driven interactions")),
+					Li(Strong(g.Text("A")), g.Text("lpine.js – Reactive client-side behavior")),
+					Li(Strong(g.Text("G")), g.Text("omponents – Type-safe HTML in Go")),
+					Li(Strong(g.Text("G")), g.Text("o – Server-side rendering with Chi router")),
+				),
 			),
-		),
 
-		// Get Started section
-		Article(
-			H2(g.Text("Try it out!")),
-			P(
-				g.Text("This boilerplate includes authentication and protected routes. "),
-				g.Text("Try logging in to see the full features."),
-			),
-			Div(
-				Style("margin-top: 1.5rem; display: flex; gap: 1rem; justify-content: center;"),
+			// Features section
+			Article(
+				Class("mb-4"),
+				H2(Class("mb-4"), g.Text("Features")),
+				Div(
+					Class("row g-4"),
 
-				g.If(!deps.Auth.IsAuthenticated(ctx.Req),
-					A(
-						Href("/login"),
-						Role("button"),
-						g.Text("Go to Login"),
+					Div(
+						Class("col-md-6 col-lg-4"),
+						Div(
+							Class("card h-100 p-3"),
+							H3(Class("h5"), g.Text("🎯 Type-Safe HTML")),
+							P(Class("mb-0"), g.Text("Write HTML in Go with gomponents. No template files, full compile-time safety.")),
+						),
+					),
+
+					Div(
+						Class("col-md-6 col-lg-4"),
+						Div(
+							Class("card h-100 p-3"),
+							H3(Class("h5"), g.Text("⚡ HTMX Hypermedia")),
+							P(Class("mb-0"), g.Text("Server-driven UI updates without heavy JavaScript frameworks.")),
+						),
+					),
+
+					Div(
+						Class("col-md-6 col-lg-4"),
+						Div(
+							Class("card h-100 p-3"),
+							H3(Class("h5"), g.Text("🔐 Built-in Auth")),
+							P(Class("mb-0"), g.Text("Session-based authentication with SCS and SQLite persistence.")),
+						),
+					),
+
+					Div(
+						Class("col-md-6 col-lg-4"),
+						Div(
+							Class("card h-100 p-3"),
+							H3(Class("h5"), g.Text("🎨 Dark Mode")),
+							P(Class("mb-0"), g.Text("Bootstrap 5.3 with native dark mode support and Alpine.js persistence.")),
+						),
+					),
+
+					Div(
+						Class("col-md-6 col-lg-4"),
+						Div(
+							Class("card h-100 p-3"),
+							H3(Class("h5"), g.Text("📦 Event System")),
+							P(Class("mb-0"), g.Text("Server-to-client events via HX-Trigger headers. Toast notifications built-in.")),
+						),
+					),
+
+					Div(
+						Class("col-md-6 col-lg-4"),
+						Div(
+							Class("card h-100 p-3"),
+							H3(Class("h5"), g.Text("🚀 Minimal Dependencies")),
+							P(Class("mb-0"), g.Text("Chi router, SCS sessions, Gomponents. No npm, no build step required.")),
+						),
 					),
 				),
+			),
 
-				g.If(deps.Auth.IsAuthenticated(ctx.Req),
-					A(
-						Href("/dashboard"),
-						Role("button"),
-						g.Text("Go to Dashboard"),
-					),
-				),
-
-				A(
-					Href("https://github.com/axelrhd/hagg"),
-					Role("button"),
-					Class("outline"),
-					g.Text("View on GitHub"),
+			// Tech Stack section
+			Article(
+				Class("card mb-4 p-4"),
+				H2(g.Text("Tech Stack")),
+				P(g.Text("This boilerplate demonstrates a complete HAGG application with:")),
+				Ul(
+					Li(Strong(g.Text("Backend:")), g.Text(" Go 1.23+, Chi v5 router, SCS v2 sessions, SQLite")),
+					Li(Strong(g.Text("Frontend:")), g.Text(" HTMX, Alpine.js, Surreal.js, Bootstrap 5.3")),
+					Li(Strong(g.Text("Templates:")), g.Text(" Gomponents (type-safe HTML in Go)")),
+					Li(Strong(g.Text("Authorization:")), g.Text(" Casbin (RBAC/ABAC ready)")),
+					Li(Strong(g.Text("Dev Tools:")), g.Text(" Just (task runner), Air (hot reload)")),
 				),
 			),
-		),
-	)
+
+			// Get Started section
+			Article(
+				Class("card p-4 text-center"),
+				H2(g.Text("Try it out!")),
+				P(
+					g.Text("This boilerplate includes authentication and protected routes. "),
+					g.Text("Try logging in to see the full features."),
+				),
+				Div(
+					Class("d-flex gap-2 justify-content-center flex-wrap mt-3"),
+
+					g.If(!deps.Auth.IsAuthenticated(ctx.Req),
+						A(
+							Href("/login"),
+							Class("btn btn-primary"),
+							g.Text("Go to Login"),
+						),
+					),
+
+					g.If(deps.Auth.IsAuthenticated(ctx.Req),
+						A(
+							Href("/dashboard"),
+							Class("btn btn-primary"),
+							g.Text("Go to Dashboard"),
+						),
+					),
+
+					A(
+						Href("https://github.com/axelrhd/hagg"),
+						Class("btn btn-outline-secondary"),
+						g.Text("View on GitHub"),
+					),
+				),
+			),
+
+		)
 
 		return ctx.Render(layout.Page(ctx, deps, content))
 	}

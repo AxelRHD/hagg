@@ -15,8 +15,8 @@ func Skeleton(req *http.Request, content ...g.Node) g.Node {
 	return Doctype(
 		HTML(
 			Lang("en"),
-			// Default theme (will be overridden by inline script if theme is saved)
-			Data("theme", "dark"),
+			// Bootstrap 5.3 dark mode - default dark
+			g.Attr("data-bs-theme", "dark"),
 
 			Head(
 				TitleEl(g.Text("HAGG Stack")),
@@ -42,7 +42,7 @@ func Skeleton(req *http.Request, content ...g.Node) g.Node {
 							if (stored) {
 								const theme = JSON.parse(stored);
 								if (theme) {
-									document.documentElement.setAttribute('data-theme', theme);
+									document.documentElement.setAttribute('data-bs-theme', theme);
 								}
 							}
 						} catch (e) {
@@ -50,6 +50,12 @@ func Skeleton(req *http.Request, content ...g.Node) g.Node {
 						}
 					})();
 				</script>`),
+
+				// --- BOOTSTRAP 5.3 CSS ---
+				Link(Rel("stylesheet"), Href("https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css")),
+
+				// --- BOOTSTRAP ICONS ---
+				Link(Rel("stylesheet"), Href("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css")),
 
 				// --- ALPINE JS ---
 				Script(
@@ -70,16 +76,13 @@ func Skeleton(req *http.Request, content ...g.Node) g.Node {
 				// --- TOAST JS ---
 				Script(Src("/static/js/toast.js")),
 
-				// --- TAILWIND CSS (with Pico-inspired semantic HTML styles) ---
-				Link(Rel("stylesheet"), Href("/static/css/styles.css")),
-
 				// --- APP CSS (custom overrides) ---
 				Link(Rel("stylesheet"), Href("/static/css/app.css")),
 			),
 			Body(
 				// Alpine.js state for theme toggle - must be on body tag
-				g.Attr("x-data", "{ theme: $persist('') }"),
-				g.Attr("x-effect", "theme !== '' && document.documentElement.setAttribute('data-theme', theme)"),
+				g.Attr("x-data", "{ theme: $persist('dark') }"),
+				g.Attr("x-effect", "theme !== '' && document.documentElement.setAttribute('data-bs-theme', theme)"),
 
 				// Global HTMX toast listener - catches toast events from ANY HTMX request
 				// IMPORTANT: Must be on <body>, not on individual forms!
@@ -87,8 +90,9 @@ func Skeleton(req *http.Request, content ...g.Node) g.Node {
 				hx.On("toast", "showToast(event.detail)"),
 
 				grp,
-				// Toasts are rendered as self-destructing elements by RenderEvents()
-				// No script processing needed - Surreal.js handles me().remove()
+
+				// --- BOOTSTRAP 5.3 JS BUNDLE (includes Popper) ---
+				Script(Src("https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js")),
 			),
 		),
 	)

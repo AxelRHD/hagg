@@ -12,14 +12,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a **work-in-progress hobby project** focused on learning and exploration. The journey matters as much as the destination - decisions are documented, trade-offs are discussed, and the architecture evolves openly.
 
-## Current Status: Phase 2 Complete ✅
+## Current Status: Phase 3 Complete ✅
 
-The Gin → Chi migration is **complete**. The project now uses Chi router exclusively:
+The project is fully migrated to Chi router and Bootstrap 5.3:
 - ✅ All routes migrated to Chi
 - ✅ Gin server removed
 - ✅ Duplicate code eliminated (~500 lines)
 - ✅ Chi is the sole server on configured port
-- ✅ All dependencies cleaned up
+- ✅ Tailwind CSS replaced with Bootstrap 5.3 (CDN)
+- ✅ No CSS build step required
 
 See `REFACTORING_PLAN.md` for details on completed phases.
 
@@ -37,17 +38,10 @@ go run cmd/main.go serve
 air
 ```
 
-### CSS Development
-```bash
-# Build CSS (production, minified)
-just css-build
+### CSS
+Bootstrap 5.3 is loaded via CDN - no build step required for CSS.
 
-# Watch CSS (development, auto-rebuild)
-just css-watch
-
-# Or directly with Tailwind CLI
-tailwindcss -i ./static/css/base.css -o ./static/css/styles.css --watch
-```
+Custom overrides are in `static/css/app.css`.
 
 ### Testing
 ```bash
@@ -238,20 +232,20 @@ Body(
 
 **Frontend (static/js/toast.js):**
 - `showToast({ message, level, timeout, position })` - Displays toast notification
-- SVG icons for success, error, warning, info
+- Bootstrap Icons for success, error, warning, info
 - Auto-dismiss after timeout (default: 5000ms)
 - Fade-in/out animation
 
 ### CSS & Styling
 
-**Tailwind CSS** with **Pico.css-inspired aesthetics**:
-- Design system defined in `tailwind.config.js`
-- Base styles in `static/css/base.css`
-- Compiled to `static/css/styles.css`
-- Warm color palette, soft shadows, clean typography
-- Dark mode support via manual toggle + `prefers-color-scheme`
+**Bootstrap 5.3** via CDN with minimal custom overrides:
+- Bootstrap CSS loaded from CDN in `skeleton.go`
+- Bootstrap Icons loaded from CDN
+- Custom overrides in `static/css/app.css`
+- Dark mode via Bootstrap's native `data-bs-theme` attribute
+- Alpine.js persistence for theme preference
 
-**No npm/node required** - Uses Tailwind standalone CLI binary installed to `~/.local/bin/tailwindcss`
+**No build step required** - All CSS is loaded directly from CDN
 
 ## Project Structure
 
@@ -271,7 +265,7 @@ internal/
     store_sqlite/           # SQLite implementation
 migrations/                 # SQL migrations (numbered files)
 static/                     # Static assets (CSS, JS, images)
-  css/                      # Tailwind source & output
+  css/                      # Custom CSS overrides (app.css)
   js/                       # Frontend JavaScript
 model.conf                  # Casbin RBAC model
 policy.csv                  # Casbin policies
@@ -377,13 +371,14 @@ Use `go run ./cmd -config` to print active configuration.
 - `github.com/mattn/go-sqlite3` - SQLite driver
 
 ### Frontend (CDN, not in go.mod)
+- Bootstrap 5.3 (CSS + JS)
+- Bootstrap Icons
 - HTMX 2.x
 - Alpine.js 3.x
 - surreal.js (DOM utilities)
 
 ### Development Tools
 - `github.com/cosmtrek/air` - Hot reload (optional)
-- Tailwind CSS standalone CLI
 - just (task runner, optional)
 
 ## Key Files to Understand

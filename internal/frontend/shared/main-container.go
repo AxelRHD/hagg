@@ -7,7 +7,7 @@ import (
 
 func MainContainer(content ...g.Node) g.Node {
 	return Main(
-		Class("container pt0"),
+		Class("container pt-0"),
 		g.Group(content),
 	)
 }

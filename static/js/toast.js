@@ -1,77 +1,74 @@
-// Toast notification system with surreal.js
-// Matches the backend toast package and icons.go
+// Toast notification system using Bootstrap 5.3 Toasts
+// Matches the backend toast package interface
 
-// Icon map (must match toast/icons.go exactly)
-const TOAST_ICONS = {
-    success: `<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="10" cy="10" r="9" stroke="#43a047" stroke-width="2"/>
-  <path d="M6 10l2.5 2.5L14 7" stroke="#43a047" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>`,
-
-    error: `<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="10" cy="10" r="9" stroke="#e53935" stroke-width="2"/>
-  <path d="M7 7l6 6M13 7l-6 6" stroke="#e53935" stroke-width="2" stroke-linecap="round"/>
-</svg>`,
-
-    warning: `<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <path d="M10 2L2 17h16L10 2z" stroke="#fb8c00" stroke-width="2" stroke-linejoin="round"/>
-  <path d="M10 8v3M10 14h.01" stroke="#fb8c00" stroke-width="2" stroke-linecap="round"/>
-</svg>`,
-
-    info: `<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="10" cy="10" r="9" stroke="#1095c1" stroke-width="2"/>
-  <path d="M10 9v5M10 6h.01" stroke="#1095c1" stroke-width="2" stroke-linecap="round"/>
-</svg>`
+// Ensure toast container exists
+function getToastContainer() {
+    var container = document.getElementById('toastContainer');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toastContainer';
+        container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+        document.body.appendChild(container);
+    }
+    return container;
 }
-
-// Create toast containers on page load
 
 // Show a toast notification
 // Matches the toast.Toast struct from Go
-function showToast({ message, level = 'info', timeout = 5000, position = 'bottom-right' }) {
-    // Position styles
-    const positionStyles = {
-        'bottom-right': 'position: fixed; bottom: 1rem; right: 1rem; z-index: 9999;',
-        'top-right': 'position: fixed; top: 1rem; right: 1rem; z-index: 9999;',
-        'bottom-left': 'position: fixed; bottom: 1rem; left: 1rem; z-index: 9999;',
-        'top-left': 'position: fixed; top: 1rem; left: 1rem; z-index: 9999;',
+function showToast(opts) {
+    var message = opts.message || '';
+    var level = opts.level || 'info';
+    var timeout = opts.timeout !== undefined ? opts.timeout : 5000;
+
+    var container = getToastContainer();
+    if (typeof bootstrap === 'undefined') {
+        console.error('Bootstrap JS not loaded');
+        return;
     }
 
-    const icon = TOAST_ICONS[level] || TOAST_ICONS.info
-    const toastHtml = `
-        <div class="toast toast-${level}" style="opacity: 0; transition: opacity 0.3s; ${positionStyles[position] || positionStyles['bottom-right']}">
-            <div style="display: flex; gap: 0.75rem; align-items: center;">
-                <div style="flex-shrink: 0;">
-                    ${icon}
-                </div>
-                <div style="flex: 1;">
-                    ${escapeHtml(message)}
-                </div>
-            </div>
-        </div>
-    `
+    var id = 'toast-' + Date.now();
 
-    // Append directly to body
-    document.body.insertAdjacentHTML('beforeend', toastHtml)
-    const toast = document.body.lastElementChild
+    // Map level to Bootstrap border color class
+    var levelMap = {
+        success: { border: 'border-success', icon: 'bi-check-circle-fill', color: 'text-success' },
+        error:   { border: 'border-danger',  icon: 'bi-x-circle-fill',     color: 'text-danger' },
+        warning: { border: 'border-warning', icon: 'bi-exclamation-triangle-fill', color: 'text-warning' },
+        info:    { border: 'border-info',    icon: 'bi-info-circle-fill',  color: 'text-info' }
+    };
 
-    // Fade in animation
-    setTimeout(() => {
-        toast.style.opacity = '1'
-    }, 10)
+    var config = levelMap[level] || levelMap.info;
 
-    // Auto-remove with fade out
+    var html = '<div id="' + id + '" class="toast align-items-center bg-body-secondary shadow border-0 border-start border-4 ' + config.border + '" role="alert">' +
+        '<div class="d-flex">' +
+        '<div class="toast-body">' +
+        '<i class="bi ' + config.icon + ' me-2 ' + config.color + '"></i>' +
+        escapeHtml(message) +
+        '</div>' +
+        '<button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast"></button>' +
+        '</div></div>';
+
+    container.insertAdjacentHTML('beforeend', html);
+    var toastEl = document.getElementById(id);
+
+    var toastOpts = {};
     if (timeout > 0) {
-        setTimeout(() => {
-            toast.style.opacity = '0'
-            setTimeout(() => toast.remove(), 300)
-        }, timeout)
+        toastOpts.delay = timeout;
+    } else {
+        toastOpts.autohide = false;
     }
+
+    var toast = new bootstrap.Toast(toastEl, toastOpts);
+    toast.show();
+
+    // Remove from DOM after hidden
+    toastEl.addEventListener('hidden.bs.toast', function() {
+        toastEl.remove();
+    });
 }
 
 // Escape HTML to prevent XSS
 function escapeHtml(text) {
-    const div = document.createElement('div')
-    div.textContent = text
-    return div.innerHTML
+    var div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }

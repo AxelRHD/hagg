@@ -16,27 +16,32 @@ import (
 //	LoginForm(loginURL)
 func LoginForm(loginURL string) g.Node {
 	return Article(
-		Class("container-narrow"),
+		Class("container-narrow card p-4"),
 
 		H1(
-			Class("text-center"),
+			Class("text-center mb-4"),
 			g.Text("Login"),
 		),
 
 		Form(
 			hx.Post(loginURL),
 
-			Input(
-				Type("text"),
-				ID("uid"),
-				Name("uid"),
-				Placeholder("UID (z. B. knO09tSEzCYDhjTcQ…)"),
-				Required(),
-				AutoFocus(),
+			Div(
+				Class("mb-3"),
+				Input(
+					Type("password"),
+					Class("form-control"),
+					ID("uid"),
+					Name("uid"),
+					Placeholder("UID"),
+					Required(),
+					AutoFocus(),
+				),
 			),
 
 			Button(
 				Type("submit"),
+				Class("btn btn-primary w-100"),
 				g.Text("Anmelden"),
 			),
 		),
@@ -53,7 +58,7 @@ func LoginForm(loginURL string) g.Node {
 //	LogoutButton(logoutURL, user.FullName())
 func LogoutButton(logoutURL, username string) g.Node {
 	return Article(
-		Class("container-narrow text-center"),
+		Class("container-narrow text-center card p-4"),
 		H3(g.Text("Bereits eingeloggt")),
 		P(
 			g.Text("Du bist angemeldet als "),
@@ -65,7 +70,7 @@ func LogoutButton(logoutURL, username string) g.Node {
 			Style("margin-top: 1.5rem;"),
 			Button(
 				Type("submit"),
-				Class("outline"),
+				Class("btn btn-outline-secondary"),
 				g.Text("Abmelden"),
 			),
 		),

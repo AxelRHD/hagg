@@ -5,6 +5,7 @@ import (
 	"github.com/axelrhd/hagg/internal/app"
 	"github.com/axelrhd/hagg/internal/frontend/shared"
 	appshared "github.com/axelrhd/hagg/internal/shared"
+	"github.com/axelrhd/hagg/internal/version"
 	g "maragu.dev/gomponents"
 	. "maragu.dev/gomponents/html"
 )
@@ -36,6 +37,15 @@ func Page(ctx *handler.Context, deps app.Deps, content ...g.Node) g.Node {
 				Div(
 					ID("content"),
 					g.Group(content),
+				),
+
+				// Footer with version
+				Footer(
+					Class("text-center text-body-secondary py-4 mt-5"),
+					Small(
+						g.Text("HAGG Stack · "),
+						Code(Class("text-body-secondary"), g.Text(version.Version)),
+					),
 				),
 			),
 		),
