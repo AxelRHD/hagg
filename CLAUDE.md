@@ -22,7 +22,6 @@ The project is fully migrated to Chi router and Bootstrap 5.3:
 - ✅ Tailwind CSS replaced with Bootstrap 5.3 (CDN)
 - ✅ No CSS build step required
 
-See `REFACTORING_PLAN.md` for details on completed phases.
 
 ## Build & Development Commands
 
@@ -358,7 +357,7 @@ Configuration is loaded from environment variables and optional `.env` file:
 - `DB_*` - Database config (PATH, DEBUG)
 - `CASBIN_*` - Casbin config (MODEL_PATH, POLICY_PATH)
 
-Use `go run ./cmd -config` to print active configuration.
+Use `go run ./cmd config` to print active configuration.
 
 ## Dependencies
 
@@ -383,8 +382,6 @@ Use `go run ./cmd -config` to print active configuration.
 
 ## Key Files to Understand
 
-- `REFACTORING_PLAN.md` - Complete refactoring roadmap and decisions
-- `MIGRATION.md` - Migration guide for users upgrading from old Gin-based hagg
 - `ARCHITECTURE.md` - Deep architectural documentation
 - `server.go` - Server startup logic
 - `routes.go` - Chi route definitions

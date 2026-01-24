@@ -325,55 +325,38 @@ function showToast({ message, level = 'info' }) {
 }
 ```
 
-#### Tailwind CSS (Pico-inspired)
+#### Bootstrap 5.3 (CDN)
 
-We use **Tailwind CSS** with a **Pico.css-inspired design system**.
+We use **Bootstrap 5.3** loaded via CDN.
 
-**Why Tailwind?**
+**Why Bootstrap?**
 
-- Full control over styling
-- No external CSS dependencies
-- Purging for small bundle size
+- Battle-tested, well-documented
+- No build step required
+- Native dark mode support (`data-bs-theme`)
+- Rich component library
 
-**Why Pico-inspired?**
+**CDN integration (in `skeleton.go`):**
 
-- Clean, minimal aesthetics
-- Good defaults for forms, buttons, cards
-- Professional without over-design
+```go
+// Bootstrap CSS
+Link(Rel("stylesheet"), Href("https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"))
 
-**Custom theme:**
+// Bootstrap Icons
+Link(Rel("stylesheet"), Href("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"))
 
-```js
-// tailwind.config.js
-module.exports = {
-  theme: {
-    extend: {
-      colors: {
-        primary: { /* blue scale */ },
-        success: '#10b981',
-        error: '#ef4444',
-        warning: '#f59e0b',
-        info: '#3b82f6',
-      },
-      borderRadius: {
-        'pico': '0.375rem',
-      },
-      boxShadow: {
-        'pico': '0 0 0 1px rgba(0, 0, 0, 0.05), ...',
-      },
-    },
-  },
-}
+// Bootstrap JS (end of body)
+Script(Src("https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"))
 ```
 
-**Build process (no npm/node):**
+**Dark mode:**
 
-```bash
-# Standalone binary (installed once)
-tailwindcss -i ./static/css/base.css -o ./static/css/styles.css --watch
-```
+Bootstrap 5.3 supports dark mode natively via `data-bs-theme="dark"` on `<html>`.
+Alpine.js persists the theme preference.
 
-See `static/css/base.css` for component styles.
+**Custom overrides:**
+
+Minimal custom CSS in `static/css/app.css` for project-specific styles.
 
 ---
 
@@ -523,34 +506,31 @@ ctx.Toast("User created")
 
 ### Frontend (JavaScript)
 
-**Toast rendering (with surreal.js):**
+**Toast rendering (using Bootstrap Toast component):**
 
 ```js
-function showToast({ message, level = 'info', timeout = 5000, position = 'bottom-right' }) {
-    const container = me(`#toast-container-${position}`)
-
-    const toastHtml = `
-        <div class="toast toast-${level} opacity-0 transition-opacity">
-            <div class="flex items-center gap-3">
-                <div>${getIcon(level)}</div>
-                <div>${message}</div>
-            </div>
-        </div>
-    `
-
-    container.insertAdjacentHTML('beforeend', toastHtml)
-    const toast = container.lastElementChild
-
-    // Enter animation
-    setTimeout(() => me(toast).classRemove('opacity-0'), 10)
-
-    // Auto-remove
-    if (timeout > 0) {
-        setTimeout(() => {
-            me(toast).classAdd('opacity-0')
-            setTimeout(() => me(toast).remove(), 300)
-        }, timeout)
+function showToast({ message, level = 'info', timeout = 5000 }) {
+    var container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+        document.body.appendChild(container);
     }
+
+    var config = getToastConfig(level);  // returns { icon, border } based on level
+
+    var html = '<div class="toast align-items-center bg-body-secondary shadow border-0 border-start border-4 ' + config.border + '">' +
+        '<div class="d-flex"><div class="toast-body d-flex align-items-center gap-2">' +
+        config.icon + message +
+        '</div><button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast"></button></div></div>';
+
+    container.insertAdjacentHTML('beforeend', html);
+    var toastEl = container.lastElementChild;
+    var toast = new bootstrap.Toast(toastEl, { delay: timeout });
+    toast.show();
+
+    toastEl.addEventListener('hidden.bs.toast', function() { toastEl.remove(); });
 }
 ```
 
@@ -558,8 +538,8 @@ function showToast({ message, level = 'info', timeout = 5000, position = 'bottom
 
 - **Unified:** One `showToast()` function for HTMX and full-page loads
 - **Server-driven:** Backend controls notification logic
-- **No external libraries:** Custom implementation with Tailwind
-- **Flexible:** Supports different positions, timeouts, levels
+- **Bootstrap-native:** Uses Bootstrap's Toast component
+- **Flexible:** Supports different levels and timeouts
 
 ---
 
@@ -875,8 +855,7 @@ server.go             # Server startup, buildRouter(), middleware stack
 routes.go             # Route definitions (AddRoutes function)
 model.conf            # Casbin RBAC model
 policy.csv            # Casbin policies (roles → actions, users → roles)
-justfile              # Task runner (dev, build, css-build, css-watch)
-tailwind.config.js    # Tailwind CSS configuration
+justfile              # Task runner (dev, build, test, etc.)
 
 cmd/
   main.go             # CLI entry point (urfave/cli)
@@ -935,8 +914,7 @@ migrations/
 
 static/
   css/
-    base.css          # Tailwind input
-    styles.css        # Tailwind output (generated, gitignored)
+    app.css           # Custom CSS overrides (Bootstrap is loaded via CDN)
 
   js/
     app.js            # Main application logic
@@ -1066,7 +1044,7 @@ The goal is not stability at all costs, but **clarity during growth**.
 
 - **More boilerplate** than frameworks (but we know what each line does)
 - **Less magic** than ORMs (but we control our queries)
-- **Manual CSS** with Tailwind (but we have full control)
+- **CDN dependency** for Bootstrap (but no build step needed)
 
 ---
 

@@ -57,7 +57,7 @@ Chi routes requests → Gomponents render HTML → HTMX updates parts of the pag
 - **[HTMX](https://htmx.org/)** — HTML over the wire, progressive enhancement
 - **[Alpine.js](https://alpinejs.dev/)** — client-side state management (minimal)
 - **[surreal.js](https://github.com/gnat/surreal)** — syntactic sugar for DOM operations
-- **[Tailwind CSS](https://tailwindcss.com/)** — utility-first CSS (Pico.css-inspired aesthetics)
+- **[Bootstrap 5.3](https://getbootstrap.com/)** — CSS framework via CDN (no build step)
 
 ---
 
@@ -68,7 +68,6 @@ Chi routes requests → Gomponents render HTML → HTMX updates parts of the pag
 - Go 1.23+ (see `go.mod`)
 - SQLite (default database)
 - [just](https://github.com/casey/just) (task runner, optional but recommended)
-- [Tailwind CLI](https://tailwindcss.com/blog/standalone-cli) (standalone binary, installed to `~/.local/bin`)
 
 ### Setup
 
@@ -80,34 +79,19 @@ cd hagg
 # Install dependencies
 go mod download
 
-# Build CSS (one-time)
-just css-build
-
 # Run the app
 go run ./cmd
 ```
 
 ### Development Mode
 
-For CSS hot-reload during development:
+Use [air](https://github.com/cosmtrek/air) for Go hot-reload:
 
 ```bash
-# Terminal 1: Watch CSS
-just css-watch
-
-# Terminal 2: Run the app
-go run ./cmd
-```
-
-Or use [air](https://github.com/cosmtrek/air) for Go hot-reload:
-
-```bash
-# Terminal 1: Watch CSS
-just css-watch
-
-# Terminal 2: Watch Go files
 air
 ```
+
+No CSS build step required — Bootstrap is loaded via CDN.
 
 ---
 
@@ -130,7 +114,7 @@ The `hagg` boilerplate includes example pages demonstrating key patterns:
 - **Server-to-client events** (toast notifications via HX-Trigger headers)
 - **Dark mode toggle** with Alpine.js state persistence
 - **Type-safe HTML** rendering with gomponents
-- **Responsive design** with Tailwind CSS + Pico-inspired semantic styles
+- **Responsive design** with Bootstrap 5.3
 
 All pages use server-side rendering — no JavaScript build step required.
 
@@ -147,7 +131,7 @@ Configuration is loaded from environment variables (and an optional `.env`).
 To print the active configuration:
 
 ```bash
-go run ./cmd -config
+go run ./cmd config
 ```
 
 ---
@@ -306,7 +290,7 @@ internal/
 
 migrations/           # SQL migrations (numbered files)
 static/               # Static assets (CSS, JS, images)
-  css/                # Tailwind CSS (base.css → styles.css)
+  css/                # Custom CSS overrides (app.css)
   js/                 # Frontend logic (app.js, toast.js, etc.)
 ```
 
@@ -355,34 +339,19 @@ require github.com/axelrhd/hagg-lib v1.2.3
 
 ## CSS & Styling
 
-We use **Tailwind CSS** with a **Pico.css-inspired design system**.
+We use **Bootstrap 5.3** via CDN.
 
-### Why Tailwind?
+### Why Bootstrap?
 
-- Full flexibility for custom components
-- No external CSS dependencies
-- Purging for small bundle size
+- Battle-tested, well-documented
+- No build step required (CDN delivery)
+- Native dark mode support (`data-bs-theme`)
+- Rich component library out of the box
 
-### Why Pico-inspired?
+### No Build Step
 
-- Clean, minimal aesthetics
-- Good typography and spacing
-- Professional look without over-design
-
-### Build Process:
-
-```bash
-# Development (watch mode)
-just css-watch
-
-# Production (minified)
-just css-build
-```
-
-The Tailwind CLI is a **standalone binary** (no npm/node required).
-Install it once to `~/.local/bin/tailwindcss` and you're done.
-
-See `tailwind.config.js` for the full design system configuration.
+Bootstrap CSS and JS are loaded directly from CDN in `skeleton.go`.
+Custom overrides live in `static/css/app.css`.
 
 ---
 
