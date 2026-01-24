@@ -77,7 +77,7 @@ func Navbar(ctx *handler.Context, deps app.Deps, oob bool) g.Node {
 
 				// Right nav items
 				Ul(
-					Class("navbar-nav"),
+					Class("navbar-nav align-items-center"),
 
 					// Show Login link if not authenticated
 					g.If(!isAuthenticated,
